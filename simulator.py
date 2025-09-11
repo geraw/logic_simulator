@@ -15,7 +15,6 @@ class Simulator:
     """
     def __init__(self, circuit: Circuit):
         
-        print("Initializing simulator...")
         self.circuit = circuit
         print(f"Loaded {len(circuit.assignments)} assignments and {len(circuit.macros)} macros.")
         

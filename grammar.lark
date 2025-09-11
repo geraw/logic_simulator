@@ -14,7 +14,7 @@ macro_definition: NAME "(" [param_list] ")" ":=" expression
 param_list: NAME ("," NAME)*
 
 // The 'expression' rule is now explicit (no '?') for more stable parsing.
-?expression: call   
+expression: call
           | variable
           | number
 
@@ -23,8 +23,11 @@ call: NAME "(" [arg_list] ")"
 arg_list: expression ("," expression)*
 
 variable: NAME
-number: "0" | "1"
-   
+
+// The 'number' rule is now more robust, pointing to a dedicated terminal.
+number: INT_VAL
+INT_VAL: "0" | "1"
+
 
 // Import common terminals from the Lark library
 %import common.CNAME -> NAME

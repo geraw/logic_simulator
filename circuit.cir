@@ -1,4 +1,4 @@
-A = Nand(B, C)
+A = D(D(B, 0),1)
 
 
 ## This is a sample circuit description file.

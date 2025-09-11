@@ -1,9 +1,7 @@
-# File: circuit_parser.py
-# Handles parsing the circuit description file into a structured representation.
-
-from lark import Lark, Transformer, UnexpectedToken, UnexpectedCharacters
+from lark import Lark, Transformer
+from lark.exceptions import LarkError, VisitError
 from dataclasses import dataclass
-from typing import List, Dict, Union
+from typing import List, Dict
 
 # --- Abstract Syntax Tree (AST) Nodes ---
 # These classes represent the components of our language in a structured way.
@@ -24,13 +22,13 @@ class Call:
 @dataclass
 class Assignment:
     target: str
-    expression: Union[Number, Variable, Call]
+    expression: object
 
 @dataclass
 class MacroDef:
     name: str
     params: List[str]
-    expression: Union[Number, Variable, Call]
+    expression: object
 
 @dataclass
 class Circuit:
@@ -45,19 +43,20 @@ class CircuitTransformer(Transformer):
     Each method corresponds to a rule in the grammar.lark file.
     """
     def number(self, n):
-        # This check prevents the "list index out of range" error
-        if not n:
-            # This case should ideally not be reached with a correct grammar,
-            # but serves as a safeguard.            
-            raise ValueError("Parser created an invalid 'number' node.")
-        
-        return Number(1 if n[0].data == 'one' else 0)
+        # This method is now more explicit. 'n[0]' is a Token object,
+        # and we get its string content from the '.value' attribute.
+        return Number(int(n[0].value))
 
     def variable(self, v):
         return Variable(str(v[0]))
 
     def arg_list(self, a):
         return a
+
+    def expression(self, e):
+        # This method handles the explicit 'expression' rule.
+        # e will be a list containing one item: the actual expression node (call, variable, or number).
+        return e[0]
 
     def call(self, c):
         name = str(c[0])
@@ -71,21 +70,13 @@ class CircuitTransformer(Transformer):
         return [str(param) for param in p]
 
     def macro_definition(self, m):
-        """Handles macro definitions with or without parameters."""
         name = str(m[0])
-        if len(m) == 3:
-            params, expr = m[1], m[2]
-        else:
-            params, expr = [], m[1]
+        params = m[1] if len(m) > 2 else []
+        expr = m[2] if len(m) > 2 else m[1]
         return MacroDef(name, params, expr)
 
     def start(self, s):
-        """
-        Processes the top-level statements into a single Circuit object.
-        's' is expected to be a list of Assignment and MacroDef objects.
-        """
-        print(f"{s= }")  # Debug print to inspect 's'
-        
+        """Processes the top-level statements into a single Circuit object."""
         circuit = Circuit(assignments={}, macros={})
         for item in s:
             if isinstance(item, Assignment):
@@ -98,10 +89,11 @@ class CircuitTransformer(Transformer):
                 circuit.macros[item.name] = item
         return circuit
 
+
 def parse_file(filepath: str) -> Circuit:
     """
-    Reads a circuit file, parses it, and transforms it into a Circuit object
-    with improved error handling for syntax issues.
+    Reads a circuit file, parses it, and transforms it into a Circuit object.
+    Includes detailed error reporting for syntax issues.
     """
     try:
         with open(filepath, 'r') as f:
@@ -109,44 +101,38 @@ def parse_file(filepath: str) -> Circuit:
         
         with open('grammar.lark', 'r') as g:
             grammar = g.read()
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"Could not find required file: {e.filename}")
 
-    parser = Lark(grammar, start='start')
-    
-    try:
+        parser = Lark(grammar, start='start')
         tree = parser.parse(content)
+        
         transformer = CircuitTransformer()
-        # With the grammar fix, the transformer now reliably returns a Circuit object.
-        # The previous workaround is no longer necessary.
-        return transformer.transform(tree)
+        result = transformer.transform(tree)
+        
+        return result
 
-    except (UnexpectedToken, UnexpectedCharacters) as e:
-        # This block handles clear syntax errors (e.g., missing comma)
-        lines = content.splitlines()
-        error_line = lines[e.line - 1] if e.line <= len(lines) else ""
-        pointer = ' ' * (e.column - 1) + '^'
+    except LarkError as e:
+        # This handles syntax errors found by Lark.
+        context = e.get_context(content).strip()
+        line, col = e.line, e.column
+        
+        error_pointer = ' ' * (col - 1) + '^'
         
         error_message = (
-            f"\n\n--- Syntax Error ---\n"
-            f"Error in file: '{filepath}'\n"
-            f"Location: Line {e.line}, Column {e.column}\n\n"
-            f"Problematic Line:\n"
-            f"  {error_line}\n"
-            f"  {pointer}\n\n"
-            f"The parser encountered an unexpected token or character."
+            f"\n--- Syntax Error in '{filepath}' at Line {line}, Column {col} ---\n"
+            f"{context}\n"
+            f"{error_pointer}\n"
+            f"Details: {e}"
         )
-        raise ValueError(error_message) from e
+        raise RuntimeError(error_message) from e
+        
     except Exception as e:
-        # This is the more general error handler for unexpected issues.
-        error_type = type(e).__name__
+        # This is a fallback for unexpected errors during the parsing/transformation phase.
         error_message = (
-            f"\n\n--- An Unexpected Parser Error Occurred ---\n"
-            f"Error Type: {error_type}\n"
+            f"\n--- An Unexpected Parser Error Occurred ---\n"
+            f"Error Type: {type(e).__name__}\n"
             f"Error Details: {e}\n\n"
-            f"This could be caused by a subtle syntax issue in '{filepath}' that\n"
-            f"the parser could not handle gracefully.\n\n"
-            f"Please double-check your circuit file for correct syntax."
+            f"This is likely caused by a subtle syntax issue in '{filepath}' or\n"
+            f"a mismatch between the grammar and the parser logic."
         )
         raise RuntimeError(error_message) from e
 

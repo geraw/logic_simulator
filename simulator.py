@@ -81,7 +81,7 @@ class Simulator:
 
         if isinstance(expr, Call):
             # --- Base Function Implementations ---
-            if expr.name == 'Nand':
+            if expr.name == 'Nand' or expr.name == 'NAND':
                 val1 = self._evaluate(expr.args[0], time_step)
                 val2 = self._evaluate(expr.args[1], time_step)
                 return 1 - (val1 * val2)  # Nand logic

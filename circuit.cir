@@ -1,18 +1,18 @@
 # A sample circuit description file using the defined grammar
 # Run like: python main.py circuit.cir -i B=111000111 
 
-# Macro Definitions (using only Nand as a primitive gate)
-Not(x)      := Nand(x, x)
-And(x,y)    := Not(Nand(x, y))
-Or(x,y)     := Nand(Not(x), Not(y)) # De Morgan's Law version
-Mux(a,b,c)  := Or(And(a, Not(c)), And(b, c))
-Xor(x,y)    := Or(And(x, Not(y)), And(Not(x), y))
-Xor3(x,y,z) := Xor(Xor(x, y), z)
+# Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y)) # De Morgan's Law version
+MUX(a,b,c)  := OR(AND(a, NOT(c)), AND(b, c))
+XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
+XOR3(x,y,z) := XOR(XOR(x, y), z)
 
 # Intermediate signals
-Ax = Xor3(D(B,0), D(D(B,0),0), D(D(D(B,0),0),0))
-C3 = Not(Xor(D(D(C3,0),1), D(C3,0)))
+Ax = XOR3(D(B,0), D(D(B,0),0), D(D(D(B,0),0),0))
+C3 = NOT(XOR(D(D(C3,0),1), D(C3,0)))
 
 # Final output signal
-A = Mux(D(A,0), Ax, C3)
+A = MUX(D(A,0), Ax, C3)
 

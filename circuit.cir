@@ -1,0 +1,23 @@
+A = Nand(B, C)
+
+
+## This is a sample circuit description file.
+#
+## Intermediate signals
+#Ax = Xor3(D(B,0), D(D(B,0),0), D(D(D(B,0),0),0))
+#C3 = Not(Xor(D(D(C3,0),1), D(C3,0)))
+#
+## Final output signal
+#
+#A = Mux(D(A,0), Ax, C3)
+#
+#
+## --- Macro Definitions ---
+## These define reusable components based on the fundamental Nand gate.
+
+Not(x)      := Nand(x, x)
+And(x,y)    := Not(Nand(x, y))
+Or(x,y)     := Nand(Not(x), Not(y)) # De Morgan's Law version
+Mux(a,b,c)  := Or(And(a, Not(c)), And(b, c))
+Xor(x,y)    := Or(And(x, Not(y)), And(Not(x), y))
+Xor3(x,y,z) := Xor(Xor(x, y), z)

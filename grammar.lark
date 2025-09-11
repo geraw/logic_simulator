@@ -1,0 +1,37 @@
+// File: grammar.lark
+// Defines the grammatical structure of the circuit description language.
+
+// The 'start' rule is now explicit (no '?') for more stable parsing.
+start: statement*
+
+?statement: assignment | macro_definition
+
+// An assignment binds an expression to a signal, e.g., A = Nand(x, y)
+assignment: NAME "=" expression
+
+// A macro definition defines a new component, e.g., Not(x) := Nand(x, x)
+macro_definition: NAME "(" [param_list] ")" ":=" expression
+param_list: NAME ("," NAME)*
+
+// The 'expression' rule is now explicit (no '?') for more stable parsing.
+?expression: call   
+          | variable
+          | number
+
+// A function call, e.g., Nand(x, y) or D(A, 0)
+call: NAME "(" [arg_list] ")"
+arg_list: expression ("," expression)*
+
+variable: NAME
+number: "0" | "1"
+   
+
+// Import common terminals from the Lark library
+%import common.CNAME -> NAME
+%import common.WS
+%import common.SH_COMMENT -> COMMENT // Use SH_COMMENT for '#' style comments
+
+// Ignore whitespace and comments
+%ignore WS
+%ignore COMMENT
+

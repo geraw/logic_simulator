@@ -5,7 +5,7 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 ## Features
 
 * **Declarative Syntax**: Describe circuits using a simple, human-readable text format.
-* **Macro Support**: Define reusable components (like `And`, `Or`, `Xor`) using a `:=` syntax.
+* **Macro Support**: Define reusable components (like `AND`, `OR`, `XOR`) using a `:=` syntax.
 * **Sequential Logic**: Built-in support for D-type flip-flops using `D(expr, default)` for time-delayed evaluation.
 * **Combinational Logic**: Automatically resolves dependencies within a single time step.
 * **Error Detection**: Detects basic combinational loops and provides clear syntax error reporting with line and column numbers.
@@ -75,8 +75,8 @@ Lines starting with # are treated as comments and are ignored.
 Assignments define a signal (wire) as the output of an expression. The left side is the signal name, and the right side is the component's output.
 
 ```cir
-# Signal 'A' is the output of a Nand gate with inputs 'B' and 'C'
-A = Nand(B, C)
+# Signal 'A' is the output of a NAND gate with inputs 'B' and 'C'
+A = NAND(B, C)
 ```
 
 ### Macro Definitions (:=)
@@ -84,18 +84,18 @@ A = Nand(B, C)
 Macros define reusable components. They are expanded into their base expressions during the initialization of the simulation.
 
 ```cir
-# A 'Not' gate is defined as a Nand gate with both inputs tied together
-Not(x) := Nand(x, x)
+# A 'NOT' gate is defined as a NAND gate with both inputs tied together
+NOT(x) := NAND(x, x)
 
-# An 'And' gate can be defined using other macros
-And(x, y) := Not(Nand(x, y))
+# An 'AND' gate can be defined using other macros
+AND(x, y) := NOT(NAND(x, y))
 ```
 
 ## Core Components
 
 The simulator has two fundamental, built-in components:
 
-### Nand(x, y)
+### NAND(x, y)
 
 The universal NAND gate. All other standard logic gates can be built from this.
 

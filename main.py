@@ -74,8 +74,7 @@ def main():
         # Display inputs first for clarity
         print("Inputs:")
         for name in sorted(inputs.keys()):
-            if name in signals_to_display:
-                print(f"  {name:<5}: {inputs[name]}")
+            print(f"  {name:<5}: {inputs[name]}")
 
         print("\nOutputs & Internal Signals:")
         for name in signals_to_display:

@@ -2,10 +2,6 @@
 
 A command-line digital logic circuit simulator built in Python using the Lark parsing library. This tool parses and simulates circuit description files, allowing for the analysis of combinational and sequential logic circuits over time.
 
-Licensed by Google
-
-[Image of a digital logic circuit diagram]
-
 ## Features
 
 * **Declarative Syntax**: Describe circuits using a simple, human-readable text format.

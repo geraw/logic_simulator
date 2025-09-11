@@ -12,6 +12,7 @@ XOR3(x,y,z) := XOR(XOR(x, y), z)
 # Intermediate signals
 Ax = XOR3(D(B,0), D(D(B,0),0), D(D(D(B,0),0),0))
 C3 = NOT(XOR(D(D(C3,0),1), D(C3,0)))
+C3 = B
 
 # Final output signal
 A = MUX(D(A,0), Ax, C3)

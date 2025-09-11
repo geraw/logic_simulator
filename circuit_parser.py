@@ -110,7 +110,23 @@ def parse_file(filepath: str) -> Circuit:
         
         return result
 
+    except VisitError as e:
+        # This handles errors that occur during the transformation phase.
+        original = e.orig_exc
+        if isinstance(original, ValueError):
+            error_message = (
+                f"\n--- Semantic Error in '{filepath}' ---\n"
+                f"{original}\n\n"
+                f"Please check for issues like duplicate definitions or incorrect macro usage."
+            )
+            raise RuntimeError(error_message) from e
+        else:
+            # Re-raise if it's an unexpected error type
+            raise
+
     except LarkError as e:
+        
+        
         # This handles syntax errors found by Lark.
         context = e.get_context(content).strip()
         line, col = e.line, e.column

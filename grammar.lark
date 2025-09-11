@@ -1,40 +1,43 @@
-// File: grammar.lark
-// Defines the grammatical structure of the circuit description language.
+// Grammar definition for the digital logic circuit description language
+// Supports combinational and sequential logic components with macro definitions
 
-// The 'start' rule is now explicit (no '?') for more stable parsing.
+// Root rule - a circuit is a sequence of statements
 start: statement*
 
 ?statement: assignment | macro_definition
 
-// An assignment binds an expression to a signal, e.g., A = Nand(x, y)
+// Assignment rule - binds an output signal to a logic expression
+// Example: A = NAND(B, C)
 assignment: NAME "=" expression
 
-// A macro definition defines a new component, e.g., Not(x) := Nand(x, x)
+// Macro definition rule - creates reusable circuit components
+// Example: NOT(x) := NAND(x, x)
 macro_definition: NAME "(" [param_list] ")" ":=" expression
 param_list: NAME ("," NAME)*
 
-// The 'expression' rule is now explicit (no '?') for more stable parsing.
+// Expression types supported in the circuit description
 expression: call
           | variable
           | number
 
-// A function call, e.g., Nand(x, y) or D(A, 0)
+// Function call rule - used for built-in gates and macros
+// Examples: NAND(x, y), D(signal, default_value)
 call: NAME "(" [arg_list] ")"
 arg_list: expression ("," expression)*
 
 variable: NAME
 
-// The 'number' rule is now more robust, pointing to a dedicated terminal.
+// Binary values only (0 or 1)
 number: INT_VAL
 INT_VAL: "0" | "1"
 
 
 // Import common terminals from the Lark library
-%import common.CNAME -> NAME
-%import common.WS
-%import common.SH_COMMENT -> COMMENT // Use SH_COMMENT for '#' style comments
+%import common.CNAME -> NAME  // Standard identifier syntax
+%import common.WS            // Standard whitespace
+%import common.SH_COMMENT -> COMMENT  // Shell-style comments (#)
 
-// Ignore whitespace and comments
+// Ignore whitespace and comments during parsing
 %ignore WS
 %ignore COMMENT
 

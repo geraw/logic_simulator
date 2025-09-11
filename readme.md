@@ -2,10 +2,9 @@
 
 A command-line digital logic circuit simulator built in Python using the Lark parsing library. This tool parses and simulates circuit description files, allowing for the analysis of combinational and sequential logic circuits over time.
 
-
+Licensed by Google
 
 [Image of a digital logic circuit diagram]
-
 
 ## Features
 
@@ -24,6 +23,7 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 ## Installation
 
 1.  **Clone the repository:**
+
     ```bash
     git clone <repository-url>
     cd logic-simulator
@@ -31,6 +31,7 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 
 2.  **Install dependencies:**
     It's recommended to use a virtual environment.
+
     ```bash
     python -m venv venv
     source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
@@ -41,7 +42,82 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 
 The simulator is executed from the command line using `main.py`.
 
-### Basic Syntax
+## Basic Syntax
 
 ```bash
 python main.py <path_to_circuit_file> [options]
+```
+
+## Options
+
+| Flag | Argument | Description |
+| --- | --- | --- |
+| -i, --input | SIGNAL=SEQUENCE | Defines an input signal. Example: -i B=1011. Can be used multiple times for multiple inputs. |
+| -o, --output | SIGNAL | Specifies a signal to display in the output. If omitted, all signals are shown. Can be used multiple times. |
+| -s, --steps | NUMBER | Sets the total number of simulation steps. If omitted, it defaults to the length of the longest input sequence. |
+
+## Example Command
+
+```bash
+python main.py circuit.cir -i B=10110010 -i C=00110101 -s 8
+```
+
+## Circuit File Syntax (.cir)
+
+Circuit files are text files that describe the components and connections of a logic circuit.
+
+### Comments
+
+Lines starting with # are treated as comments and are ignored.
+
+```cir
+# This is a comment
+```
+
+### Assignments (=)
+
+Assignments define a signal (wire) as the output of an expression. The left side is the signal name, and the right side is the component's output.
+
+```cir
+# Signal 'A' is the output of a Nand gate with inputs 'B' and 'C'
+A = Nand(B, C)
+```
+
+### Macro Definitions (:=)
+
+Macros define reusable components. They are expanded into their base expressions during the initialization of the simulation.
+
+```cir
+# A 'Not' gate is defined as a Nand gate with both inputs tied together
+Not(x) := Nand(x, x)
+
+# An 'And' gate can be defined using other macros
+And(x, y) := Not(Nand(x, y))
+```
+
+## Core Components
+
+The simulator has two fundamental, built-in components:
+
+### Nand(x, y)
+
+The universal NAND gate. All other standard logic gates can be built from this.
+
+### D(expr, default)
+
+A D-type flip-flop or delay element.
+
+* expr: The expression to be evaluated in the previous time step
+* default: The value to return at the very first time step (t=0), when there is no previous state
+
+## Project Structure
+
+```text
+logic_simulator/
+├── grammar.lark          # Defines the language grammar for Lark
+├── circuit_parser.py     # Parses .cir files into an Abstract Syntax Tree (AST)
+├── simulator.py          # The core simulation engine
+├── main.py              # The command-line interface
+├── circuit.cir          # An example circuit file
+└── README.md            # This file
+```

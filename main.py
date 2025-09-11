@@ -93,7 +93,9 @@ def main():
 
     except FileNotFoundError as e:
         print(f"\nError: File not found - {e.filename}")
-    except Exception as e:
+    except RecursionError as e:
+        print("\nError: Maximum recursion depth exceeded. Possible combinational loop in the circuit.")
+    except Exception as e:        
         print(f"\nAn error occurred: {e}")
 
 

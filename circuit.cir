@@ -1,5 +1,5 @@
 # A sample circuit description file using the defined grammar
-# Run like: python main.py circuit.cir -i B=111000111 
+# Run like: python main.py circuit.cir -i B=111000111 -o A 
 
 # Macro Definitions (using only NAND as a primitive gate)
 NOT(x)      := NAND(x, x)

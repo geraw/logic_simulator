@@ -84,9 +84,8 @@ def main():
 
     except FileNotFoundError as e:
         print(f"\nError: File not found - {e.filename}")
-    # except Exception as e:
-        
-    #     print(f"\nAn error occurred: {e}")
+    except Exception as e:       
+        print(f"\nAn error occurred: {e}")
 
 if __name__ == "__main__":
     main()

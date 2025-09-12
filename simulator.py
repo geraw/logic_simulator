@@ -16,7 +16,7 @@ class Simulator:
     def __init__(self, circuit: Circuit):
         
         self.circuit = circuit
-        print(f"Loaded {len(circuit.assignments)} assignments and {len(circuit.macros)} macros.")
+        #print(f"Loaded {len(circuit.assignments)} assignments and {len(circuit.macros)} macros.")
         
         # First, expand all macros to get expressions with only base functions
         self.expanded_assignments = self._expand_all_macros()
@@ -59,7 +59,7 @@ class Simulator:
         Iterates through all assignments and expands their expressions fully,
         leaving only base functions (Nand, D) and variables.
         """
-        print("Expanding all macros...")
+        #print("Expanding all macros...")
         expanded = {}
         for target, assignment in self.circuit.assignments.items():
             # Start with an empty context for top-level assignments

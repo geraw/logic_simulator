@@ -15,4 +15,3 @@ C3 = NOT(XOR(D(D(C3,0),1), D(C3,0)))
 
 # Final output signal
 A = MUX(D(A,0), Ax, C3)
-

@@ -121,7 +121,7 @@ AND(x,y)    := NOT(NAND(x, y))
 OR(x,y)     := NAND(NOT(x), NOT(y))
 XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
 
-# An n-bit binary counter using D flip-flops and XOR gates
+# An n-bit binary counter using D flip-flops and NAND gates
 O0 = XOR(D(O0,0),I)
 O1 = XOR(D(O1,0), AND(D(O0,0),I))
 O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))

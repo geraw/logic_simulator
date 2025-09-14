@@ -20,7 +20,7 @@ The optimal strategy guarantees a 50% win rate:
   - Odd rounds: Play the next casino bet
 
 ## The Challenge
-Design a logic circuit that generates Alice's bits 2-8 based on:
+Design a logic circuit that generates Alice's bits 2-9 based on:
 - Bob's bits 1-9
 - Casino's bits 1-9
 

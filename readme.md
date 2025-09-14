@@ -114,7 +114,7 @@ logic_simulator/
 ├── circuit_parser.py     # Parses .cir files into an Abstract Syntax Tree (AST)
 ├── simulator.py          # The core simulation engine
 ├── main.py              # The command-line interface
-├── circuit.cir          # An example circuit file
+├── counter.cir          # An example circuit file
 └── README.md            # This file
 ```
 # Example Circuit File (counter.cir)

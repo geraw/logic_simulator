@@ -21,10 +21,10 @@ def calculate_score(outputs: Dict[str, str], num_bits: int) -> int:
     c_seq = outputs.get('C', '?' * num_bits)
     
     score = 0
-    for i in range(num_bits):
+    for i in range(num_bits-1):
         # Ensure all signals are valid at this time step before comparing
-        if a_seq[i] != '?' and b_seq[i] != '?' and c_seq[i] != '?':
-            if a_seq[i] == b_seq[i] == c_seq[i]:
+        if a_seq[i] != '?' and b_seq[i+1] != '?' and c_seq[i+1] != '?':
+            if a_seq[i] == b_seq[i+1] == c_seq[i+1]:
                 score += 1
     return score
 

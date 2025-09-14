@@ -52,11 +52,6 @@ python main.py <path_to_circuit_file> [options]
 | -o, --output | SIGNAL | Specifies a signal to display in the output. If omitted, all signals are shown. Can be used multiple times. |
 | -s, --steps | NUMBER | Sets the total number of simulation steps. If omitted, it defaults to the length of the longest input sequence. |
 
-## Example Command
-
-```bash
-python main.py circuit.cir -i B=10110010 -i C=00110101 -s 8
-```
 
 ## Circuit File Syntax (.cir)
 
@@ -144,23 +139,19 @@ This command sets the input signal `I` to a specific sequence of bits, simulatin
 The output will look something like this:
 
 ```
-╔══════════════════════════════════════╗
-║        Circuit Simulation Run        ║
-╠══════════════════════════════════════╣
-║ ⚡ Parsing circuit file: counter.cir  ║
-║ 🔄 Initializing simulator...         ║
-║ ▶️ Running for 16 steps...           ║
-╠══════════════════════════════════════╣
-║              Inputs                  ║
-╟──────────────────────────────────────╢
-║   I    : 0010010100101111           ║
-╠══════════════════════════════════════╣
-║         Outputs & Signals            ║
-╟──────────────────────────────────────╢
-║   O0   : 0011100111001010           ║
-║   O1   : 0000011111000110           ║
-║   O2   : 0000000000111110           ║
-╚══════════════════════════════════════╝
+Parsing circuit file: counter.cir...
+Initializing simulator and expanding macros...
+Running simulation for 16 steps...
+------------------------------
+Simulation Complete!
+------------------------------
+Inputs:
+  I    : 0010010100101111
+
+Outputs & Internal Signals:
+  O0   : 0011100111001010
+  O1   : 0000011111000110
+  O2   : 0000000000111110
 ```
 
 This output shows the input sequence for signal `I` and the resulting sequences for the output signals `O0`, `O1`, and `O2` over the 16 simulation steps. Each output signal represents a bit of the binary counter, demonstrating how it increments in response to the input signal.

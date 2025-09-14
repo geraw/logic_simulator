@@ -90,7 +90,7 @@ AND(x, y) := NOT(NAND(x, y))
 
 The simulator has two fundamental, built-in components:
 
-### 🔧 NAND(x, y)
+### ⊼ NAND(x, y)
 
 The universal NAND gate. All other standard logic gates can be built from this.
 

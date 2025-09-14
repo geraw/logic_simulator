@@ -12,13 +12,6 @@ Alice and Bob are playing a betting game against a casino with the following rul
 - After seeing the sequence, Bob cannot communicate with Alice
 - Alice and Bob must develop a strategy beforehand
 
-## Optimal Strategy
-The optimal strategy guarantees a 50% win rate:
-- Alice repeats Bob's previous bet
-- Bob alternates between:
-  - Even rounds: Play the current casino bet
-  - Odd rounds: Play the next casino bet
-
 ## The Challenge
 Design a logic circuit that generates Alice's bits 2-9 based on:
 - Bob's bits 1-9

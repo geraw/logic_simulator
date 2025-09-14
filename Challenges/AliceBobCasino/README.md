@@ -28,7 +28,8 @@ Design a logic circuit that generates Alice's bits 2-9 based on:
 The scoring script (`score.py`) evaluates your circuit by:
 1. Testing all possible Casino sequences against all possible Bob sequences
 2. For each Casino sequence (C), it finds the best Bob sequence (B) that maximizes wins
-3. The final score is: Min_C Max_B Sum(A(i)=B(i+1)=C(i+1), i=1,...,8)
+3. The final score is: min_C max_B ∑[i=1 to 8] { 1 if A(i)=B(i+1)=C(i+1)
+                                                 0 otherwise }
 
 Note: Alice's first bit cannot be guaranteed to result in a win, as it has no previous information to work with.
 

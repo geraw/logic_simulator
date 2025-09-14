@@ -1,8 +1,21 @@
-# Logic Circuit Simulator
+# Logic Circuit Simulator 🔧
+
+```
+  ┌─────────┐    ┌─────────┐    ┌─────────┐
+  │   AND   │    │   OR    │    │  NAND   │
+  │  Gate   │    │  Gate   │    │  Gate   │
+  └─────────┘    └─────────┘    └─────────┘
+      │              │              │
+      └──────────────┴──────────────┘
+              │
+         Circuit Parser
+              │
+         ⬇️ Simulation ⬇️
+```
 
 A command-line digital logic circuit simulator built in Python using the Lark parsing library. This tool parses and simulates circuit description files, allowing for the analysis of combinational and sequential logic circuits over time.
 
-## Features
+## ✨ Features
 
 * **Declarative Syntax**: Describe circuits using a simple, human-readable text format.
 * **Macro Support**: Define reusable components (like `AND`, `OR`, `XOR`) using a `:=` syntax.
@@ -95,27 +108,27 @@ AND(x, y) := NOT(NAND(x, y))
 
 The simulator has two fundamental, built-in components:
 
-### NAND(x, y)
+### 🔧 NAND(x, y)
 
 The universal NAND gate. All other standard logic gates can be built from this.
 
-### D(expr, default)
+### ⏱️ D(expr, default)
 
 A D-type flip-flop or delay element.
 
 * expr: The expression to be evaluated in the previous time step
 * default: The value to return at the very first time step (t=0), when there is no previous state
 
-## Project Structure
+## 📁 Project Structure
 
-```text
-logic_simulator/
-├── grammar.lark          # Defines the language grammar for Lark
-├── circuit_parser.py     # Parses .cir files into an Abstract Syntax Tree (AST)
-├── simulator.py          # The core simulation engine
-├── main.py              # The command-line interface
-├── counter.cir          # An example circuit file
-└── README.md            # This file
+```
+📦 logic_simulator/
+ ┣ 📜 grammar.lark          # Defines the language grammar for Lark
+ ┣ 📜 circuit_parser.py     # Parses .cir files into an AST
+ ┣ 📜 simulator.py          # The core simulation engine
+ ┣ 📜 main.py              # The command-line interface
+ ┣ 📜 counter.cir          # An example circuit file
+ └ 📜 README.md            # This file
 ```
 # Example Circuit File (counter.cir)
 
@@ -144,19 +157,23 @@ This command sets the input signal `I` to a specific sequence of bits, simulatin
 The output will look something like this:
 
 ```
-Parsing circuit file: counter.cir...
-Initializing simulator and expanding macros...
-Running simulation for 16 steps...
-------------------------------
-Simulation Complete!
-------------------------------
-Inputs:
-  I    : 0010010100101111
-
-Outputs & Internal Signals:
-  O0   : 0011100111001010
-  O1   : 0000011111000110
-  O2   : 0000000000111110
+╔══════════════════════════════════════╗
+║        Circuit Simulation Run        ║
+╠══════════════════════════════════════╣
+║ ⚡ Parsing circuit file: counter.cir  ║
+║ 🔄 Initializing simulator...         ║
+║ ▶️ Running for 16 steps...           ║
+╠══════════════════════════════════════╣
+║              Inputs                  ║
+╟──────────────────────────────────────╢
+║   I    : 0010010100101111           ║
+╠══════════════════════════════════════╣
+║         Outputs & Signals            ║
+╟──────────────────────────────────────╢
+║   O0   : 0011100111001010           ║
+║   O1   : 0000011111000110           ║
+║   O2   : 0000000000111110           ║
+╚══════════════════════════════════════╝
 ```
 
 This output shows the input sequence for signal `I` and the resulting sequences for the output signals `O0`, `O1`, and `O2` over the 16 simulation steps. Each output signal represents a bit of the binary counter, demonstrating how it increments in response to the input signal.

@@ -1,18 +1,5 @@
 # Logic Circuit Simulator 🔧
 
-```
-  ┌─────────┐    ┌─────────┐    ┌─────────┐
-  │   AND   │    │   OR    │    │  NAND   │
-  │  Gate   │    │  Gate   │    │  Gate   │
-  └─────────┘    └─────────┘    └─────────┘
-      │              │              │
-      └──────────────┴──────────────┘
-              │
-         Circuit Parser
-              │
-         ⬇️ Simulation ⬇️
-```
-
 A command-line digital logic circuit simulator built in Python using the Lark parsing library. This tool parses and simulates circuit description files, allowing for the analysis of combinational and sequential logic circuits over time.
 
 ## ✨ Features

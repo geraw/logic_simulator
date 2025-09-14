@@ -22,7 +22,7 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 
     ```bash
     git clone <repository-url>
-    cd logic-simulator
+    cd logic_simulator
     ```
 
 2.  **Install dependencies:**

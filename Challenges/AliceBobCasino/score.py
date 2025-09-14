@@ -1,8 +1,15 @@
 import itertools
+import os
 import sys
+from typing import Dict
+
+# Add parent directory to Python path if not already there
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+if root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
 from circuit_parser import parse_file
 from simulator import Simulator
-from typing import Dict
 
 def calculate_score(outputs: Dict[str, str], num_bits: int) -> int:
     """
@@ -94,8 +101,15 @@ def find_worst_c(circuit_file: str, num_bits: int):
     print(f"Score (min of max): {worst_c_info['min_best_score']} / {num_bits}")
 
 if __name__ == '__main__':
-    # Configuration for the analysis
-    CIRCUIT_TO_ANALYZE = 'circuit.cir'
-    NUM_BITS_TO_TEST = 9 # As requested: 9-bit signals
-
-    find_worst_c(CIRCUIT_TO_ANALYZE, NUM_BITS_TO_TEST)
+    import argparse
+    parser = argparse.ArgumentParser(description='Analyze circuit for worst-case inputs')
+    parser.add_argument('--circuit', '-c', 
+                      default=os.path.join(root_dir, 'circuit.cir'),
+                      help='Path to the circuit file (default: circuit.cir in root directory)')
+    parser.add_argument('--bits', '-b', 
+                      type=int, 
+                      default=9,
+                      help='Number of bits to test (default: 9)')
+    
+    args = parser.parse_args()
+    find_worst_c(args.circuit, args.bits)

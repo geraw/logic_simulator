@@ -1,0 +1,23 @@
+# A sample circuit description file using the defined grammar
+# Run like: python main.py counter.cir -i I=0010010100101111
+#
+# Expected output:
+#     O0   : 0011100111001010
+#     O1   : 0000011111000110
+#     O2   : 0000000000111110
+#
+# This is a 3-bit binary counter that increments on each clock cycle when I=1. O0 is the least significant bit. 
+# O2 is the most significant bit. 
+
+
+# Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y)) 
+XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
+
+# An n-bit binary counter using D flip-flops and XOR gates
+O0 = XOR(D(O0,0),I)
+O1 = XOR(D(O1,0),  AND(D(O0,0),I))
+O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
+

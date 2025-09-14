@@ -1,0 +1,3 @@
+"""
+Logic Circuit Simulator package
+"""

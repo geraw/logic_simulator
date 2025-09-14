@@ -37,6 +37,7 @@ $$
 0 & \text{otherwise} 
 \end{cases}
 $$
+
 where A(i) is Alice's bit for round i, B(i+1) is Bob's bit for round i+1, and C(i+1) is the Casino's bit for round i+1.
 
 Note: Alice's first bit cannot be guaranteed to result in a win, as it has no previous information to work with.

@@ -94,5 +94,13 @@ class TestErrorCases(unittest.TestCase):
             sim.run({}, 1)
         self.assertIn("unresolved dependency", str(context.exception))
 
+    def test_d_function_params(self):
+        circuit_file = os.path.join(self.test_dir, 'error_d_params.cir')
+        circuit = parse_file(circuit_file)
+        sim = Simulator(circuit)
+        with self.assertRaises(ValueError) as context:
+            sim.run({}, 1)
+        self.assertIn("D function requires exactly 2 arguments", str(context.exception))
+
 if __name__ == '__main__':
     unittest.main()

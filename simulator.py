@@ -87,6 +87,8 @@ class Simulator:
                 return 1 - (val1 * val2)  # Nand logic
 
             if expr.name == 'D':
+                if len(expr.args) != 2:
+                    raise ValueError(f"D function requires exactly 2 arguments (expression and default value), but got {len(expr.args)}")
                 expr_to_eval, default_expr = expr.args[0], expr.args[1]
                 if time_step == 0:
                     # At t=0, use the default value (evaluated at t=0)

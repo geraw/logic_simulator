@@ -1,0 +1,3 @@
+# Test incorrect D function usage
+NOT(x) := NAND(x, x)
+A = NOT(D(B))  # D requires 2 parameters but only 1 given

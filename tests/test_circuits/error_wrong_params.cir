@@ -1,0 +1,3 @@
+# Test wrong number of parameters
+NOT(x) := NAND(x, x)
+A = NOT(B, C)  # NOT takes one parameter but given two

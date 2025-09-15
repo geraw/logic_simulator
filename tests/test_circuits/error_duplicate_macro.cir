@@ -1,0 +1,3 @@
+# Test duplicate macro definition
+NOT(x) := NAND(x, x)
+NOT(y) := NAND(y, y)  # Same macro defined twice

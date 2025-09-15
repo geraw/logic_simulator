@@ -1,0 +1,3 @@
+# Test using undefined signal
+NOT(x) := NAND(x, x)
+A = NOT(B)  # B is never defined

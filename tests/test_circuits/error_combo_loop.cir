@@ -1,0 +1,4 @@
+# Test combinatorial loop
+NOT(x) := NAND(x, x)
+A = NOT(B)
+B = NOT(A)

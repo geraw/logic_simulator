@@ -1,0 +1,12 @@
+# Test basic gate functionality
+NOT(x) := NAND(x, x)
+AND(x,y) := NOT(NAND(x, y))
+OR(x,y) := NAND(NOT(x), NOT(y))
+XOR(x,y) := OR(AND(x, NOT(y)), AND(NOT(x), y))
+
+# Test outputs
+N = NOT(A)     # NOT gate test
+W = AND(B, C)  # AND gate test
+X = OR(B, C)   # OR gate test
+Y = XOR(B, C)  # XOR gate test
+Z = NAND(B, C) # NAND gate test

@@ -1,0 +1,2 @@
+# Test using an undefined macro
+A = UNDEFINED_MACRO(B)

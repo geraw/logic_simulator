@@ -34,6 +34,27 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
     pip install lark
     ```
 
+## Testing
+
+Run the comprehensive test suite:
+
+```bash
+python -m tests.test_suite
+```
+
+The test suite includes:
+- Basic gate functionality (NOT, AND, OR, XOR, NAND)
+- Sequential logic (D flip-flops)
+- Error cases:
+  - Undefined macros
+  - Wrong parameter counts
+  - Combinational loops
+  - Duplicate macro definitions
+  - Undefined signals
+- Real-world examples (binary counter)
+
+Each test case provides both the circuit description and expected outputs for verification.
+
 ## How to Run
 
 The simulator is executed from the command line using `main.py`.

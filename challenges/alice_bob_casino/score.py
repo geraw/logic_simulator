@@ -6,13 +6,29 @@ from typing import Dict, Optional, List, Tuple
 from multiprocessing import Pool, cpu_count
 import numpy as np
 
-# Add parent directory to Python path if not already there
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-sys.path.insert(0, root_dir)
+def find_project_root():
+    """Find the project root directory containing simulator.py and circuit_parser.py"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    while current_dir != os.path.dirname(current_dir):  # Stop at root directory
+        if all(os.path.exists(os.path.join(current_dir, f)) 
+               for f in ['simulator.py', 'circuit_parser.py', 'grammar.lark']):
+            return current_dir
+        current_dir = os.path.dirname(current_dir)
+    return None
 
-# Direct imports from the root directory
-from simulator import Simulator
-from circuit_parser import Circuit, parse_file
+# Add project root to Python path if not already there
+root_dir = find_project_root()
+if root_dir and root_dir not in sys.path:
+    sys.path.insert(0, root_dir)
+
+try:
+    from simulator import Simulator
+    from circuit_parser import Circuit, parse_file
+except ImportError as e:
+    print(f"Error: Could not import required modules. Make sure you're running from the project root or challenges directory.")
+    print(f"Project root detected as: {root_dir}")
+    print(f"Import error: {e}")
+    sys.exit(1)
 
 def calculate_score(outputs: Dict[str, str], num_bits: int) -> int:
     """
@@ -113,13 +129,16 @@ def find_worst_c(circuit_file: str, num_bits: int, cached_circuit: Optional[Circ
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Analyze circuit for worst-case inputs')
+    
+    # Update default circuit path to be relative to the script
+    default_circuit = os.path.join(os.path.dirname(__file__), 'Alice.cir')
     parser.add_argument('--circuit', '-c', 
-                      default=os.path.join(root_dir, 'alice.cir'),
-                      help='Path to the circuit file (default: alice.cir in root directory)')
+                      default=default_circuit,
+                      help='Path to the circuit file (default: Alice.cir in script directory)')
     parser.add_argument('--bits', '-b', 
                       type=int, 
                       default=9,
-                      help='Number of bits to test (default: 9)')   
+                      help='Number of bits to test (default: 9)')
     
     args = parser.parse_args()
     find_worst_c(args.circuit, args.bits)

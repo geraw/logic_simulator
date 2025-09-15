@@ -2,6 +2,7 @@ from lark import Lark, Transformer
 from lark.exceptions import LarkError, VisitError
 from dataclasses import dataclass
 from typing import List, Dict
+import os
 
 # --- Abstract Syntax Tree (AST) Nodes ---
 # These classes represent the components of our language in a structured way.
@@ -99,7 +100,9 @@ def parse_file(filepath: str) -> Circuit:
         with open(filepath, 'r') as f:
             content = f.read()
         
-        with open('grammar.lark', 'r') as g:
+        # Use absolute path for grammar.lark
+        grammar_path = os.path.join(os.path.dirname(__file__), 'grammar.lark')
+        with open(grammar_path, 'r') as g:
             grammar = g.read()
 
         parser = Lark(grammar, start='start')

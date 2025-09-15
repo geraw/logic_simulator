@@ -1,5 +1,5 @@
 # A sample circuit description file using the defined grammar
-# Run like: python main.py circuit.cir -i B=111000111 -o A 
+# Run like: python main.py alice.cir -i B=111000111 -o A 
 
 # Macro Definitions (using only NAND as a primitive gate)
 NOT(x)      := NAND(x, x)
@@ -10,7 +10,7 @@ XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
 XOR3(x,y,z) := XOR(XOR(x, y), z)
 
 # Intermediate signals
-Ax = XOR3(D(B,0), D(D(B,0),0), D(D(D(B,0),0),0))
+Ax = XOR3(B, D(B,0), D(D(B,0),0),0)
 C3 = D(D(D(C3,1),0), D(C3,0), 0)
 
 # Final output signal

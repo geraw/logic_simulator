@@ -104,8 +104,8 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Analyze circuit for worst-case inputs')
     parser.add_argument('--circuit', '-c', 
-                      default=os.path.join(root_dir, 'circuit.cir'),
-                      help='Path to the circuit file (default: circuit.cir in root directory)')
+                      default=os.path.join(root_dir, 'alice.cir'),
+                      help='Path to the circuit file (default: alice.cir in root directory)')
     parser.add_argument('--bits', '-b', 
                       type=int, 
                       default=9,

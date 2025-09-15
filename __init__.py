@@ -1,3 +1,1 @@
-"""
-Logic Circuit Simulator package
-"""
+# This file makes the directory a Python package

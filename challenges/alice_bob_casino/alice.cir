@@ -10,8 +10,8 @@ XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
 XOR3(x,y,z) := XOR(XOR(x, y), z)
 
 # Intermediate signals
-Ax = XOR3(B, D(B,0), D(D(B,0),0),0)
-C3 = D(D(D(C3,1),0), D(C3,0), 0)
+Ax = XOR3(B, D(B,0), D(D(B,0),0))
+C3 = D(D(D(C3,0),0),1)
 
 # Final output signal
 A = MUX(D(A,0), Ax, C3)

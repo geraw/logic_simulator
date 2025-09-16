@@ -7,7 +7,7 @@ OR8(a,b,c,d,e,f,g,h) := OR(OR(OR(a,b),OR(c,d)),OR(OR(e,f),OR(g,h)))
 
 # Try appending 1 first (check if next state exists in history)
 
-# Y should generate: 0000111101100101
+# Y should generate: 1111011001010000
 
 Y1 = D(Y,0)
 Y2 = D(D(Y,0),0)

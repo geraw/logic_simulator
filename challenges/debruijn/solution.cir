@@ -23,7 +23,7 @@ H1011 = OR(AND4(    Y4 , NOT(Y3),     Y2 , Y1), D(H1011,0))
 H1101 = OR(AND4(    Y4 ,     Y3 , NOT(Y2), Y1), D(H1101,0))
 H1111 = OR(AND4(    Y4 ,     Y3 ,     Y2 , Y1), D(H1111,0))
 
-PO = OR8(
+Y = OR8(
         AND4(NOT(Y3), NOT(Y2), NOT(Y1), NOT(H0001)),
         AND4(NOT(Y3), NOT(Y2),     Y1 , NOT(H0011)),
         AND4(NOT(Y3),     Y2 , NOT(Y1), NOT(H0101)),
@@ -32,7 +32,4 @@ PO = OR8(
         AND4(    Y3 , NOT(Y2),     Y1 , NOT(H1011)),
         AND4(    Y3 ,     Y2 , NOT(Y1), NOT(H1101)),
         AND4(    Y3 ,     Y2 ,     Y1 , NOT(H1111))
-)
-
-# Output next bit of sequence
-Y = D(D(D(D(PO,0),0),0),0)
+    )

@@ -1,14 +1,4 @@
-# A reference solution for the "Largest of Three" challenge.
-#
-# This circuit reads three 3‑bit signals (X1, X2 and X3) and outputs Y,
-# the 3‑bit sequence corresponding to the largest input.  Ties are
-# resolved in favour of X1 over X2 over X3.  The algorithm maintains
-# three state signals (s1, s2, s3) that track which inputs are still
-# candidates to be the maximum.  Initially all are candidates (D default
-# value 1).  At each time step we compute the maximum bit among X1, X2
-# and X3.  Candidates that have a 0 when another candidate has a 1
-# are eliminated.  The output Y for the current time step is selected
-# according to the highest‑priority candidate.
+# Solution for the "Largest of Three" challenge.
 
 # Macro Definitions (using only NAND as a primitive gate)
 NOT(x)      := NAND(x, x)
@@ -18,53 +8,28 @@ OR(x,y)     := NAND(NOT(x), NOT(y))
 # Multiplexer: selects 'a' if 'c' is 0, else selects 'b'.
 MUX(a,b,c)  := OR(AND(a, NOT(c)), AND(b, c))
 
-# --- State Registers ---
-# s1, s2 and s3 indicate whether X1, X2 or X3 are still
-# considered candidates to be the largest input.  They are
-# initialised to 1 and updated each cycle by s*_next.
-s1 = D(s1_next,1)
-s2 = D(s2_next,1)
-s3 = D(s3_next,1)
+# 3-way multiplexer: if sel1=1 choose a, else if sel2=1 choose b, else choose c
+MUX3(a,b,c,sel1,sel2) := MUX(c, MUX(b, a, sel1), OR(sel1, sel2))
 
-# --- Maximum bit detection ---
-# Determine if any of the current bits is 1.  M is 1 if at least
-# one of X1, X2 or X3 has a 1 at the current time step.
-tmp_or12 = OR(X1, X2)
-M        = OR(tmp_or12, X3)
-mbar     = NOT(M)
+# --- Comparison Logic ---
+# Track which inputs are still in the running (initially all are candidates)
+# Use delayed feedback to maintain state across time steps
 
-# --- Candidate update logic ---
-# If M=0 (all bits are 0), nobody is eliminated.  Otherwise,
-# a candidate stays in the running only if its current bit is 1.
-# keep* is 1 if that input either matches the max bit or if there
-# were no 1s at this time step.
-keep1    = OR(mbar, X1)
-keep2    = OR(mbar, X2)
-keep3    = OR(mbar, X3)
+# State variables: 1 means the input is still a candidate
+active1 = D(s1, 1)
+active2 = D(s2, 1)  
+active3 = D(s3, 1)
 
-# Compute next‑state candidate flags.
-s1_temp  = AND(s1, keep1)
-s2_temp  = AND(s2, keep2)
-s3_temp  = AND(s3, keep3)
-s1_next  = s1_temp
-s2_next  = s2_temp
-s3_next  = s3_temp
+# At each bit position, eliminate candidates that have 0 when others have 1
+# max_bit = maximum bit value among all active candidates
+max_bit = OR(OR(AND(X1, active1), AND(X2, active2)), AND(X3, active3))
 
-# --- Output selection logic ---
-# Compute complement of candidate flags for priority decisions.
-s1bar    = NOT(s1)
-s2bar    = NOT(s2)
+# Update candidate status: stay active if you were active AND 
+# (you have the max bit OR the max bit is 0)
+s1 = AND(active1, OR(NOT(max_bit), X1))
+s2 = AND(active2, OR(NOT(max_bit), X2))  
+s3 = AND(active3, OR(NOT(max_bit), X3))
 
-# cond23 is 1 only when both s1 and s2 are 0 (i.e. neither X1 nor X2
-# is still a candidate), meaning we should choose X3.
-cond23   = AND(s1bar, s2bar)
-
-# First choose between X1 and X2.  Use s1bar as the select signal:
-# when s1 is 1 (s1bar=0), choose X1; otherwise choose X2.  This
-# prioritises X1 over X2.
-choice12 = MUX(X1, X2, s1bar)
-
-# Now choose between the (X1/X2) choice and X3.  Use cond23 as the
-# select signal: if neither X1 nor X2 is a candidate, use X3.  This
-# implicitly prioritises X2 over X3 when s1=0 and s2=1.
-Y = MUX(choice12, X3, cond23)
+# Output: select from highest priority active candidate
+# Priority order: X1 > X2 > X3
+Y = MUX3(X1, X2, X3, s1, s2)

@@ -1,0 +1,15 @@
+# Checksum (Parity) Circuit Example Solution
+# Computes the parity (XOR of all bits) of input X
+
+# Macro definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(NOT(x), y), AND(x, NOT(y)))
+
+# Use a D flip-flop to accumulate the running parity
+# At each step, parity = XOR of previous parity and current bit
+parity = XOR(D(parity, 0), X)
+
+# Output the final parity after all bits have been read
+Y = parity

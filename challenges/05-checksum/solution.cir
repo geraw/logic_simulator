@@ -9,7 +9,5 @@ XOR(x,y)    := OR(AND(NOT(x), y), AND(x, NOT(y)))
 
 # Use a D flip-flop to accumulate the running parity
 # At each step, parity = XOR of previous parity and current bit
-parity = XOR(D(parity, 0), X)
+Y = XOR(D(Y, 0), X)
 
-# Output the final parity after all bits have been read
-Y = parity

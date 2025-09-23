@@ -7,22 +7,14 @@ AND(x,y)    := NOT(NAND(x, y))
 OR(x,y)     := NAND(NOT(x), NOT(y))
 XOR(x,y)    := OR(AND(NOT(x), y), AND(x, NOT(y)))
 
+
 # CRC state bits (shift register)
 # Initial state is 0 for all bits
-crc0 = D(crc0, 0)  # leftmost bit
-crc1 = D(crc1, 0)
-crc2 = D(crc2, 0)
+# Use next state signals to avoid multiple assignments
+r0 = X
+r1 = XOR(D(r0, 0), X)
+r2 = XOR(D(r1, 0), X)
+r3 = D(r2, 0)
+r4 = XOR(D(r3, 0), X)
 
-# Feedback logic for polynomial x^3 + x + 1 (binary 1011)
-# At each step, shift in X and update CRC bits
-feedback = XOR(X, crc2)
-next_crc0 = feedback
-next_crc1 = XOR(crc0, feedback)
-next_crc2 = XOR(crc1, feedback)
-
-crc0 = next_crc0
-crc1 = next_crc1
-crc2 = next_crc2
-
-# Output the CRC after all bits have been processed
-CRC = crc0 crc1 crc2
+CRC = r4

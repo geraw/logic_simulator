@@ -54,7 +54,7 @@ A = NOT(B)
   <div id="errorModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('errorModal').style.display='none'">&times;</button>
-      <h3>Error</h3>
+      <!-- <h4>Error</h4> -->
       <div id="errormsg"></div>
     </div>
   </div>
@@ -222,23 +222,23 @@ def simulate_inline(code:str, inputs:dict, steps:int):
       statusEl.textContent = 'Done';
     } catch(e){
       let fullMsg = (e && e.message) ? String(e.message) : String(e);
-      // If RuntimeError, extract its text (including syntax block)
+      // If RuntimeError, ValueError, or MacroCycleError, extract its text
       let errorText = '';
       if (fullMsg.includes('RuntimeError:')) {
-        // Get everything after 'RuntimeError:'
         errorText = fullMsg.split('RuntimeError:')[1].trim();
-        // If there's a syntax block, prefer that
         let syntaxBlock = errorText.match(/---[^\n]+---[\s\S]*?(?=\n\s*Details:|$)/);
         if(syntaxBlock){
           errorText = syntaxBlock[0];
         }
-        // Also append details if present
         let detailsMatch = fullMsg.match(/Details:[\s\S]*$/);
         if(detailsMatch){
           errorText += '\n' + detailsMatch[0];
         }
+      } else if (fullMsg.includes('ValueError:')) {
+        errorText = fullMsg.split('ValueError:')[1].trim();
+      } else if (fullMsg.includes('MacroCycleError:')) {
+        errorText = fullMsg.split('MacroCycleError:')[1].trim();
       } else {
-        // Remove traceback lines
         let lines = fullMsg.split('\n');
         let filtered = lines.filter(l => !l.includes('Traceback') && !l.match(/File "/) && !l.match(/eval_code_async/) && !l.match(/run_async/) && !l.match(/CodeRunner/) && !l.match(/<exec>/));
         errorText = filtered.join('\n').trim();

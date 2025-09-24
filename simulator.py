@@ -1,3 +1,6 @@
+class MacroCycleError(Exception):
+    """Custom exception for cyclic macro definitions."""
+    pass
 # File: simulator.py
 # Contains the core logic for simulating the circuit over time.
 
@@ -47,11 +50,38 @@ class Simulator:
                 # Create a new context for this macro expansion
                 new_macro_context = dict(zip(macro.params, expanded_args))
                 # The expression body needs to be a deep copy to prevent modification
-                return self._expand_expression(copy.deepcopy(macro.expression), new_macro_context)
+                return self._expand_expression(copy.deepcopy(macro.expression), new_macro_context, [expr.name])
             else:
                 # It's a base function (like Nand, D)
                 return Call(expr.name, expanded_args)
         
+        raise TypeError(f"Unknown expression type during expansion: {type(expr)}")
+    def _expand_expression(self, expr, macro_context: dict, macro_stack=None):
+        """Recursively expands all macros within a single expression, with cyclic detection."""
+        if macro_stack is None:
+            macro_stack = []
+        if isinstance(expr, Number):
+            return expr
+        if isinstance(expr, Variable):
+            return macro_context.get(expr.name, expr)
+        if isinstance(expr, Call):
+            expanded_args = [self._expand_expression(arg, macro_context, macro_stack) for arg in expr.args]
+            if expr.name in self.circuit.macros:
+                if expr.name in macro_stack:
+                    raise MacroCycleError(f"Cyclic macro definition detected: macro '{expr.name}' is part of a cycle: {' -> '.join(macro_stack + [expr.name])}")
+                macro = self.circuit.macros[expr.name]
+                if len(macro.params) != len(expanded_args):
+                    raise ValueError(
+                        f"Macro '{macro.name}' called with {len(expanded_args)} args, "
+                        f"but expected {len(macro.params)}."
+                    )
+                new_macro_context = dict(zip(macro.params, expanded_args))
+                macro_stack.append(expr.name)
+                result = self._expand_expression(copy.deepcopy(macro.expression), new_macro_context, macro_stack)
+                macro_stack.pop()
+                return result
+            else:
+                return Call(expr.name, expanded_args)
         raise TypeError(f"Unknown expression type during expansion: {type(expr)}")
 
     def _expand_all_macros(self):

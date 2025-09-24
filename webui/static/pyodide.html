@@ -485,12 +485,83 @@ document.addEventListener('mouseup', function() {
     }
   });
   
+  function showError(message) {
+    document.getElementById('errormsg').innerHTML = message;
+    document.getElementById('errorModal').style.display = 'flex';
+    statusEl.textContent = 'Input validation error';
+  }
+  
+  function validateInputFormat(inputStr) {
+    if (!inputStr) {
+      showError('Input cannot be empty. Expected format: VariableName=BinaryString (e.g., I=1010; X=111)');
+      return false;
+    }
+    
+    // Split by semicolons to get individual variable assignments
+    const assignments = inputStr.split(';').map(s => s.trim()).filter(s => s.length > 0);
+    
+    if (assignments.length === 0) {
+      showError('Input cannot be empty. Expected format: VariableName=BinaryString (e.g., I=1010)');
+      return false;
+    }
+    
+    // Regular expression for valid variable name (starts with letter or underscore, followed by letters, numbers, or underscores)
+    const validVarName = /^[A-Za-z_][A-Za-z0-9_]*$/;
+    
+    for (const assignment of assignments) {
+      // Check if assignment contains exactly one equals sign
+      const parts = assignment.split('=');
+      if (parts.length !== 2) {
+        showError(`Invalid assignment "${assignment}". Expected format: VariableName=BinaryString (e.g., I=1010)`);
+        return false;
+      }
+      
+      const [varName, value] = parts.map(s => s.trim());
+      
+      // Validate variable name
+      if (!varName) {
+        showError(`Variable name cannot be empty in assignment "${assignment}"`);
+        return false;
+      }
+      
+      if (!validVarName.test(varName)) {
+        showError(`Invalid variable name "${varName}". Variable names must start with a letter or underscore and contain only letters, numbers, and underscores.`);
+        return false;
+      }
+      
+      // Validate value (should only contain 0s and 1s after trimming)
+      if (!value) {
+        showError(`Value cannot be empty for variable "${varName}". Expected binary string (e.g., 1010)`);
+        return false;
+      }
+      
+      const cleanValue = value.replace(/[^01]/g, '');
+      if (cleanValue.length === 0) {
+        showError(`Value for variable "${varName}" must contain at least one binary digit (0 or 1)`);
+        return false;
+      }
+      
+      if (cleanValue !== value) {
+        showError(`Value for variable "${varName}" contains invalid characters. Only 0s and 1s are allowed.`);
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
   async function simulate(){
     const pyodide = await pyodideReadyPromise;
+    
+    // Validate input format
+    const inputStr = document.getElementById('inputs').value.trim();
+    if (!validateInputFormat(inputStr)) {
+      return; // Error message already shown by validateInputFormat
+    }
+    
     statusEl.textContent = 'Simulating...';
     const code = editor.getValue();
     const steps = parseInt(document.getElementById('steps').value,10) || 8;
-    const inputStr = document.getElementById('inputs').value.trim();
     const inputs = {};
     if(inputStr){
       for(const frag of inputStr.split(';')){
@@ -565,7 +636,7 @@ document.addEventListener('mouseup', function() {
         colNum = parseInt(lineColMatch[2],10);
         window._errMarker = editor.markText({line:lineNum-1,ch:colNum?colNum-1:0},{line:lineNum-1,ch:colNum?colNum:100},{className:'cm-error-highlight'});
         if(fullMsg.includes('Syntax Error') || fullMsg.includes('UnexpectedCharacters')){
-          const marker = document.createElement("div");
+          const marker = document.createElement("div"); 
           marker.style.color = "#b00";
           marker.innerHTML = "&#x25CF;";
           marker.title = "Syntax error";

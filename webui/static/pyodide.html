@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/mode/simple.min.js"></script>
   <script src="circuit_mode.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
   <style>
     body { font-family: system-ui, sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     header { background:#222; color:#fff; padding:8px 14px; font-weight:600; }
@@ -152,7 +153,9 @@ A = NOT(B)
       const r = await fetch(readmePath);
       if(!r.ok) throw new Error(`Could not fetch README for ${challenge}`);
       const readmeText = await r.text();
-      document.getElementById('readmeContent').textContent = readmeText;
+      const converter = new showdown.Converter();
+      const html = converter.makeHtml(readmeText);
+      document.getElementById('readmeContent').innerHTML = html;
       readmeModal.style.display = 'flex';
     } catch(e) {
       log('Error showing README: ' + e.message);

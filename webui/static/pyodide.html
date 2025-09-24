@@ -16,8 +16,13 @@
     header { background:#222; color:#fff; padding:8px 14px; font-weight:600; flex-shrink: 0; }
     #menu { background:#eee; border-bottom:1px solid #ccc; padding:6px 14px; display:flex; gap:18px; align-items:center; flex-shrink: 0; }
     main { flex:1; display:flex; flex-direction:column; gap:8px; padding:8px; overflow:hidden; min-height:0; padding-bottom: 50px; /* Space for footer */ }
-    /* MODIFICATION: Changed #editor selector to .CodeMirror to correctly target the editor element */
-    .CodeMirror { flex: 1 1 60%; min-height: 200px; }
+    /* CodeMirror editor styling */
+    .CodeMirror { 
+      flex: 1 1 60%; 
+      min-height: 200px; 
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
   .panel { background:#f5f5f5; padding:8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; overflow:visible; }
     .inputs-panel { flex: 0 0 auto; }
     .resizer {
@@ -44,7 +49,11 @@
       background: #999;
       border-radius: 1px;
     }
-    .outputs-section { flex: 1 1 40%; min-height: 100px; display:flex; flex-direction:column;
+    .outputs-section { 
+      flex: 1 1 40%; 
+      min-height: 100px; 
+      display: flex; 
+      flex-direction: column;
     }
     .outputs-panel { flex:1; min-height:0; }
     #outputs {
@@ -403,9 +412,20 @@ def simulate_inline(code:str, inputs:dict, steps:int):
 
   // Resizer functionality
   let isResizing = false;
+  let startY = 0;
+  let startEditorHeight = 0;
+  let startOutputsHeight = 0;
 
   document.getElementById('resizer').addEventListener('mousedown', function(e) {
     isResizing = true;
+    startY = e.clientY;
+    
+    // Get current heights
+    const editorElement = editor.getWrapperElement();
+    const outputsSection = document.querySelector('.outputs-section');
+    startEditorHeight = editorElement.offsetHeight;
+    startOutputsHeight = outputsSection.offsetHeight;
+    
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
     e.preventDefault();
@@ -414,74 +434,50 @@ def simulate_inline(code:str, inputs:dict, steps:int):
   document.addEventListener('mousemove', function(e) {
     if (!isResizing) return;
 
-    // MODIFICATION: Replaced getElementById with editor.getWrapperElement()
     const editorElement = editor.getWrapperElement();
-    if (!editorElement) return;
-
-    const main = document.querySelector('main');
-    const mainRect = main.getBoundingClientRect();
     const outputsSection = document.querySelector('.outputs-section');
-    const inputsPanel = document.querySelector('.inputs-panel');
+    if (!editorElement || !outputsSection) return;
 
-    // Calculate new position relative to main container
-    const mouseY = e.clientY - mainRect.top;
-    const inputsPanelHeight = inputsPanel.offsetHeight + 8; // Include gap
-    const resizerHeight = 8;
-    const totalAvailableHeight = main.clientHeight - inputsPanelHeight - resizerHeight - 16; // Account for padding
-
+    // Calculate the change in mouse position
+    const deltaY = e.clientY - startY;
+    
+    // Calculate new heights
+    let newEditorHeight = startEditorHeight + deltaY;
+    let newOutputsHeight = startOutputsHeight - deltaY;
+    
     // Minimum sizes
-    const minEditorHeight = 100; // Adjusted min height
-    const minOutputsHeight = 80; // Adjusted min height
-
-    // Calculate new editor height based on mouse position
-    let newEditorHeight = mouseY - inputsPanelHeight;
-
-    // Enforce minimum and maximum sizes
+    const minEditorHeight = 150;
+    const minOutputsHeight = 100;
+    
+    // Enforce minimum sizes
     if (newEditorHeight < minEditorHeight) {
       newEditorHeight = minEditorHeight;
-    } else if (newEditorHeight > totalAvailableHeight - minOutputsHeight) {
-      newEditorHeight = totalAvailableHeight - minOutputsHeight;
+      newOutputsHeight = startEditorHeight + startOutputsHeight - newEditorHeight;
+    } else if (newOutputsHeight < minOutputsHeight) {
+      newOutputsHeight = minOutputsHeight;
+      newEditorHeight = startEditorHeight + startOutputsHeight - newOutputsHeight;
     }
 
-    const newOutputsHeight = totalAvailableHeight - newEditorHeight;
-
-    // Apply new heights directly using pixels during drag
-    editorElement.style.flex = 'none';
+    // Apply new heights
     editorElement.style.height = newEditorHeight + 'px';
-    outputsSection.style.flex = 'none';
     outputsSection.style.height = newOutputsHeight + 'px';
+    
+    // Override flex properties to use fixed heights during resize
+    editorElement.style.flex = 'none';
+    outputsSection.style.flex = 'none';
 
     // Refresh CodeMirror to handle resize
     editor.refresh();
   });
 
-document.addEventListener('mouseup', function() {
+  document.addEventListener('mouseup', function() {
     if (isResizing) {
       isResizing = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-
-      // Get the elements again
-      const editorElement = editor.getWrapperElement();
-      const outputsSection = document.querySelector('.outputs-section');
-
-      if (editorElement && outputsSection) {
-          const totalHeight = editorElement.offsetHeight + outputsSection.offsetHeight;
-          if (totalHeight > 0) {
-              // Calculate the new flex-grow proportions based on the final pixel heights
-              const newEditorFlexGrow = editorElement.offsetHeight / totalHeight;
-              const newOutputsFlexGrow = outputsSection.offsetHeight / totalHeight;
-
-              // Apply new flex values with a flex-basis of 0% to make the proportions stick
-              // This overrides the original CSS and makes the new layout permanent until the next drag.
-              editorElement.style.flex = `${newEditorFlexGrow} 1 0%`;
-              outputsSection.style.flex = `${newOutputsFlexGrow} 1 0%`;
-              
-              // Remove the explicit height styles to let the new flex rules take over
-              editorElement.style.height = null;
-              outputsSection.style.height = null;
-          }
-      }
+      
+      // Keep the fixed heights after resize is complete
+      // This makes the resize permanent until the next resize operation
     }
   });
   

@@ -9,14 +9,25 @@
   <script src="circuit_mode.js"></script>
   <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
   <style>
-    body { font-family: system-ui, sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; }
+    body { font-family: system-ui, sans-serif; margin:0; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     header { background:#222; color:#fff; padding:8px 14px; font-weight:600; }
     #menu { background:#eee; border-bottom:1px solid #ccc; padding:6px 14px; display:flex; gap:18px; align-items:center; }
     #menu select { margin-left:8px; }
-    main { flex:1; display:grid; grid-template-columns: 1fr; gap:8px; padding:8px; }
-    #editor { height:100%; }
-    .panel { background:#f5f5f5; padding:8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; }
-    textarea { width:100%; height:160px; }
+    main { flex:1; display:flex; flex-direction:column; gap:8px; padding:8px; overflow:hidden; min-height:0; }
+    #editor { flex:1; min-height:200px; }
+  .panel { background:#f5f5f5; padding:8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; overflow:visible; }
+    .outputs-section { flex:0 1 auto; min-height:0; display:flex; flex-direction:column; }
+    .outputs-panel { flex:1; min-height:0; }
+    #outputs {
+      height: 100px;
+      overflow-y: auto;
+      padding-right: 4px;
+      width: 100%;
+      box-sizing: border-box;
+      display: block;
+      min-height: 0;
+    }
+    textarea { width:100%; height:80%; }
     pre { background:#111; color:#0f0; padding:8px; overflow:auto; font-size:13px; }
     button { cursor:pointer; }
     #runBtn {
@@ -34,8 +45,8 @@
     }
     #runBtn .btn-content {
       display: inline-flex;
-      /* align-items: center; */
-      vertical-align: top;
+      height: 0.1em;
+      align-items: center; 
     }
     #runBtn:hover {
       background: linear-gradient(90deg, #43a047 60%, #2e7031 100%);
@@ -74,11 +85,13 @@ A = NOT(B)
   <div class="panel">
   <label>Inputs (X=101;Y=11): <input id="inputs" style="width:260px" value="B=101010" /></label>
   <label>Steps: <input id="steps" type="number" value="8" min="1" max="256" /></label>
-  <button id="runBtn"><span class="btn-content"><span class="play-icon" style="font-size:1.2em;">&#9654;</span>Simulate</span></button>
+  <button id="runBtn"><span class="btn-content"><span class="play-icon" style="font-size:0.9em;">&#9654;</span>Simulate</span></button>
   </div>
-  <label style="font-weight:600; margin-bottom:4px; display:block;">Outputs</label>
-  <div class="panel">
-    <div id="outputs"></div>
+  <div class="outputs-section">
+    <label style="font-weight:600; margin-bottom:4px; display:block;">Outputs</label>
+    <div class="panel outputs-panel">
+      <div id="outputs"></div>
+    </div>
   </div>
   <!-- Error Modal -->
   <div id="errorModal" class="modal" style="display:none;">

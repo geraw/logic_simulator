@@ -75,7 +75,7 @@ A = NOT(B)
   </div>
 </div>
 <script>
-  let editor = CodeMirror.fromTextArea(document.getElementById('code'), { lineNumbers:true, mode:'circuitdsl' });
+  let editor = CodeMirror.fromTextArea(document.getElementById('code'), { lineNumbers:true, mode:'circuitdsl', gutters: ["CodeMirror-linenumbers", "syntax-errors"] });
   const statusEl = document.getElementById('status');
   const logEl = document.getElementById('log');
   const challengeSelect = document.getElementById('challengeSelect');
@@ -148,6 +148,40 @@ def simulate_inline(code:str, inputs:dict, steps:int):
     return pyodide;
   })();
 
+  async function checkSyntaxLive(code) {
+    const pyodide = await pyodideReadyPromise;
+    // Remove previous error highlights and gutter markers
+    if(window._errMarker){ window._errMarker.clear(); window._errMarker = null; }
+    editor.clearGutter("syntax-errors");
+    try {
+      // Try parsing only, don't run simulation
+      await pyodide.runPythonAsync(`from circuit_parser import parse_file\nparse_file('_inline.cir')`, { globals: { '__builtins__': pyodide.globals.get('__builtins__'), 'open': () => ({ write: () => code }) } });
+      // No error, do nothing
+    } catch(e) {
+      let fullMsg = (e && e.message) ? String(e.message) : String(e);
+      // Extract line/col info
+      let lineColMatch = fullMsg.match(/at line (\d+) col (\d+)/);
+      let lineNum = null, colNum = null;
+      if(lineColMatch){
+        lineNum = parseInt(lineColMatch[1],10);
+        colNum = parseInt(lineColMatch[2],10);
+      }
+      // Highlight error line and gutter
+      if(lineNum){
+        window._errMarker = editor.markText({line:lineNum-1,ch:colNum?colNum-1:0},{line:lineNum-1,ch:colNum?colNum:100},{className:'cm-error-highlight'});
+        const marker = document.createElement("div");
+        marker.style.color = "#b00";
+        marker.innerHTML = "&#x25CF;";
+        marker.title = "Syntax error";
+        editor.setGutterMarker(lineNum-1, "syntax-errors", marker);
+      }
+    }
+  }
+
+  editor.on('change', function(){
+    checkSyntaxLive(editor.getValue());
+  });
+
   async function simulate(){
     const pyodide = await pyodideReadyPromise;
     statusEl.textContent = 'Simulating...';
@@ -161,8 +195,8 @@ def simulate_inline(code:str, inputs:dict, steps:int):
       }
     }
     try {
-  document.getElementById('errorModal').style.display = 'none';
-  document.getElementById('errormsg').innerHTML = '';
+      document.getElementById('errorModal').style.display = 'none';
+      document.getElementById('errormsg').innerHTML = '';
       const pySnippet = `res = simulate_inline(${JSON.stringify(code)}, ${JSON.stringify(inputs)}, ${steps})`;
       log('Running simulation with inputs: '+JSON.stringify(inputs)+', steps: '+steps);
       await pyodide.runPythonAsync(pySnippet);
@@ -187,37 +221,55 @@ def simulate_inline(code:str, inputs:dict, steps:int):
       });
       statusEl.textContent = 'Done';
     } catch(e){
-      let userMsg = '';
-      // Show full traceback and highlight error line if possible
       let fullMsg = (e && e.message) ? String(e.message) : String(e);
-      // Try to extract line/col info from traceback
+      // If RuntimeError, extract its text (including syntax block)
+      let errorText = '';
+      if (fullMsg.includes('RuntimeError:')) {
+        // Get everything after 'RuntimeError:'
+        errorText = fullMsg.split('RuntimeError:')[1].trim();
+        // If there's a syntax block, prefer that
+        let syntaxBlock = errorText.match(/---[^\n]+---[\s\S]*?(?=\n\s*Details:|$)/);
+        if(syntaxBlock){
+          errorText = syntaxBlock[0];
+        }
+        // Also append details if present
+        let detailsMatch = fullMsg.match(/Details:[\s\S]*$/);
+        if(detailsMatch){
+          errorText += '\n' + detailsMatch[0];
+        }
+      } else {
+        // Remove traceback lines
+        let lines = fullMsg.split('\n');
+        let filtered = lines.filter(l => !l.includes('Traceback') && !l.match(/File "/) && !l.match(/eval_code_async/) && !l.match(/run_async/) && !l.match(/CodeRunner/) && !l.match(/<exec>/));
+        errorText = filtered.join('\n').trim();
+        if(!errorText) errorText = fullMsg;
+      }
+      // HTML escape, but preserve leading spaces for alignment
+      errorText = errorText.replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      // Replace each line's leading spaces with &nbsp; for correct arrow alignment
+      errorText = errorText.split('\n').map(l => l.replace(/^ +/g, m => '&nbsp;'.repeat(m.length))).join('<br>');
+      let html = `<div style='margin-bottom:8px; color:#b00; font-family:monospace; white-space:pre;'>${errorText}</div>`;
+      document.getElementById('errormsg').innerHTML = html;
+      document.getElementById('errorModal').style.display = 'flex';
+      log('Error: '+fullMsg);
+      statusEl.textContent = 'Error';
+      // Remove previous gutter marker
+      editor.clearGutter("syntax-errors");
+      // Highlight error line in editor and add gutter marker for syntax errors
       let lineColMatch = fullMsg.match(/at line (\d+) col (\d+)/);
       let lineNum = null, colNum = null;
       if(lineColMatch){
         lineNum = parseInt(lineColMatch[1],10);
         colNum = parseInt(lineColMatch[2],10);
-      }
-      if (fullMsg.includes('ValueError:')) {
-        userMsg = 'Circuit error: ' + fullMsg.split('ValueError:')[1].split('\n')[0];
-      } else if (fullMsg.includes('RuntimeError:')) {
-        userMsg = 'Circuit error: ' + fullMsg.split('RuntimeError:')[1].split('\n')[0];
-      } else if (fullMsg.includes('Unknown function')) {
-        userMsg = 'Unknown gate or macro name in your circuit.';
-      } else if (fullMsg.includes('Syntax Error') || fullMsg.includes('UnexpectedCharacters')) {
-        userMsg = 'Syntax error in your circuit code.';
-      } else {
-        userMsg = 'Simulation error: ' + fullMsg.split('\n')[0];
-      }
-      // Compose error panel content
-  let html = `<div style='margin-bottom:8px; color:#b00;'>${userMsg}</div>`;
-  html += `<details><summary>Show full error details</summary><pre style='color:#b00; background:#f9f9f9;'>${fullMsg.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></details>`;
-  document.getElementById('errormsg').innerHTML = html;
-  document.getElementById('errorModal').style.display = 'flex';
-      log('Error: '+fullMsg);
-      statusEl.textContent = 'Error';
-      // Highlight error line in editor
-      if(lineNum){
         window._errMarker = editor.markText({line:lineNum-1,ch:colNum?colNum-1:0},{line:lineNum-1,ch:colNum?colNum:100},{className:'cm-error-highlight'});
+        if(fullMsg.includes('Syntax Error') || fullMsg.includes('UnexpectedCharacters')){
+          const marker = document.createElement("div");
+          marker.style.color = "#b00";
+          marker.innerHTML = "&#x25CF;";
+          marker.title = "Syntax error";
+          editor.setGutterMarker(lineNum-1, "syntax-errors", marker);
+        }
+        editor.scrollIntoView({line:lineNum-1, ch:0}, 100);
       }
     }
   // Add error highlight style

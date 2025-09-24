@@ -1,45 +1,92 @@
+# Logic Simulator and Circuit Language Guide
 
-# Logic Simulator Web UI (Zero Install, Pure Static Hosting)
+This document explains the circuit description language and the simulation process, using a full adder circuit as a practical example.
 
-This project is now **100% static** and runs entirely in the browser using Pyodide (WebAssembly Python). No server or installation required.
+## 1. The Circuit Description Language
 
-## Usage
+The simulator uses a simple language to define digital logic circuits. The core components are signals, gates, and macros.
 
-1. Open [`webui/static/pyodide.html`](webui/static/pyodide.html) in your browser.
-	- For GitHub Pages: `https://<your_user>.github.io/<repo>/webui/static/pyodide.html`
-	- For local testing: run a static server (e.g. `python -m http.server 8001`) and open `http://127.0.0.1:8001/webui/static/pyodide.html`
+### Signals and Connections
+- **Signals** are the "wires" of your circuit. They can be inputs, outputs, or internal connections. Signal names are case-sensitive.
+- **Connections** are made using the `=` operator. The left side is the output signal, and the right side is a gate expression.
+  ```
+  C = NAND(A, B)
+  ```
 
-## Features
-- Edit circuit code with syntax highlighting (custom CodeMirror mode)
-- Enter input bitstreams per signal
-- Simulate and view outputs (all logic runs in-browser)
-- Run challenge scoring (fetches each challenge's `score.py` and executes in Pyodide)
+### Built-in Gates
+The simulator has two built-in gates:
+- `NAND(a, b)`: The universal NAND gate.
+- `D(a, default)`: A D-type flip-flop, which introduces a one-step delay. This is the primary element for creating sequential (stateful) circuits. The default value is used for the first step when there is no previous state.
 
-## How It Works
-1. Loads Pyodide runtime in the browser
-2. Installs `lark` (pure Python) with `micropip`
-3. Fetches project Python sources (`simulator.py`, `circuit_parser.py`, `grammar.lark`, etc.) and writes them into Pyodide's virtual FS
-4. Runs simulation and scoring entirely client-side
+All other common logic gates (`AND`, `OR`, `NOT`, etc.) can be defined by the user using the macro system.
 
-## Limitations / Next Improvements
-- Initial load (~ a few MB) due to Pyodide + lark
-- No offline caching strategy (could add Service Worker)
-- Waveform view still textual
-- LocalStorage persistence per challenge (planned)
-- SVG waveform panel (planned)
+### Macros
+Macros allow you to define reusable circuit components. This is powerful for building complex circuits from simpler ones.
+- **Definition:** Use the `:=` operator.
+- **Syntax:** `MACRO_NAME(param1, param2, ...) := expression`
 
-## Security Considerations
-All code runs in the browser sandbox. Scoring scripts are executed as Python in Pyodide; do not fetch untrusted code.
+**Example: Defining standard gates from `NAND`**
+All standard logic gates can be created from `NAND`.
+```
+NOT(x) := NAND(x, x)
+AND(a, b) := NOT(NAND(a, b))
+OR(a, b) := NAND(NOT(a), NOT(b))
+XOR(a, b) := NAND(NAND(a, NOT(b)), NAND(NOT(a), b))
+```
+You can then use these macros just like built-in gates.
 
-## File Reference
-| File | Purpose |
-|------|---------|
-| `webui/static/pyodide.html` | Main static UI (Pyodide) |
-| `webui/static/circuit_mode.js` | Custom CodeMirror mode for circuit DSL |
-| `webui/static/challenges_index.json` | Static list of challenge IDs (used by Pyodide UI) |
+## 2. Simulation Tutorial: Building a 3-Bit Counter
 
-## Contributing
-PRs welcome. Keep static mode up to date with any core logic changes.
+Let's use a 3-bit binary counter as an example. This circuit increments its value on each clock cycle when the input signal `I` is high (1).
+
+Here is the complete circuit for the counter:
+
+```
+# Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := NAND(NAND(a, NOT(b)), NAND(NOT(a), b))
+
+# A 3-bit binary counter using D flip-flops
+# O0 is the least significant bit.
+O0 = XOR(D(O0, 0), I)
+O1 = XOR(D(O1, 0), AND(D(O0, 0), I))
+O2 = XOR(D(O2, 0), AND(D(O1, 0), AND(D(O0, 0), I)))
+```
+
+### How to Run the Simulation
+1.  **Paste the Code:** Copy the 3-bit counter circuit code above into the circuit editor in the web interface.
+2.  **Set the Inputs:** In the "Inputs" text field, define the values for the input signal `I`. The counter state signals (`O0`, `O1`, `O2`) are initialized by the `D(..., 0)` gate, so we only need to provide the `I` sequence. Let's use a 16-step sequence:
+    ```
+    I=0010010100101111
+    ```
+3.  **Set the Steps:** The number of steps will be automatically inferred from the length of the input sequence, which is 16. You can also set it manually.
+4.  **Run the Simulation:** Click the **Simulate** (▶) button.
+
+### How to Interpret the Output
+After the simulation runs, the "Outputs" panel will display the final values of all signals. To see the step-by-step history, view the "Log". For the input `I=0010010100101111`, the history will show:
+
+```
+I:    0010010100101111
+O0:   0011100111001010
+O1:   0000011111000110
+O2:   0000000000111110
+```
+
+This output shows the state of the counter at each of the 16 simulation steps. The signals `O2`, `O1`, and `O0` represent a 3-bit binary number, where `O2` is the most significant bit and `O0` is the least significant bit. This number is the total count of `1`s that have appeared in the input signal `I` up to that point in time.
+
+For example, let's look at the 8th step:
+- The input `I` up to step 8 is `00100101`. It contains three `1`s.
+- At step 8, the output is `O2=0`, `O1=1`, `O0=1`.
+- Reading `(O2, O1, O0)` as `011` gives the binary representation for the number 3, which correctly matches the number of `1`s seen in the input.
+
+By the end of the simulation (step 16), the input `I` has contained eight `1`s. The counter value `(O2, O1, O0)` is `000`, because the 3-bit counter has counted to 7 and then wrapped around back to 0.
+
+## 3. Advanced Concepts: Sequential Circuits
+
+The `D` gate (D-type flip-flop) is used to create circuits with memory (sequential logic). It introduces a one-step delay, meaning its output at a given step is equal to its input from the *previous* step. The counter example above makes extensive use of it to store its state between steps.
+
 
 
 

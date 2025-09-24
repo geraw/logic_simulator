@@ -81,13 +81,20 @@
   <span id="status"></span>
 </div>
 <main>
-  <textarea id="code"># Loading sample circuit...
-NOT(x) := NAND(x,x)
-A = NOT(B)
+  <textarea id="code"># Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
+
+# An n-bit binary counter using D flip-flops and NAND gates
+O0 = XOR(D(O0,0),I)
+O1 = XOR(D(O1,0), AND(D(O0,0),I))
+O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
 </textarea>
   <div class="panel">
-  <label>Inputs (X=101;Y=11): <input id="inputs" style="width:260px" value="B=101010" /></label>
-  <label>Steps: <input id="steps" type="number" value="8" min="1" max="256" /></label>
+  <label>Inputs (X=101;Y=11): <input id="inputs" style="width:260px" value="I=0010010100101111" /></label>
+  <label>Steps: <input id="steps" type="number" value="16" min="1" max="256" /></label>
   <button id="runBtn"><span class="btn-content"><span class="play-icon" style="font-size:0.9em;">&#9654;</span>Simulate</span></button>
   </div>
   <div class="outputs-section">
@@ -154,7 +161,7 @@ A = NOT(B)
   document.getElementById('mainReadmeBtn').addEventListener('click', async function(e){
     e.preventDefault();
     try {
-      const readmePath = `../../readme.md`;
+      const readmePath = `../../webui/README.md`;
       const r = await fetch(readmePath);
       if(!r.ok) throw new Error(`Could not fetch main README`);
       const readmeText = await r.text();

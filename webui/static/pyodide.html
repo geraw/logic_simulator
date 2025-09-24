@@ -233,11 +233,10 @@ def simulate_inline(code:str, inputs:dict, steps:int):
       log('Simulation completed');
       if(!pyodide.runPython("'res' in globals()")) throw new Error('No result returned');
       const pyResult = pyodide.runPython('res');
-      log('Raw result: '+pyResult);
+      log('Simulation result: '+pyResult);
       if(!pyResult) throw new Error('Result object is null');
       let jsResult;
       try { jsResult = JSON.parse(pyResult); } catch(_){ throw new Error('Failed to parse simulation result as JSON'); }
-      log('Converted result: '+JSON.stringify(jsResult));
       if(!jsResult || typeof jsResult !== 'object') throw new Error('Result not an object');
       let outputsObj = jsResult.outputs;
       if(!outputsObj){

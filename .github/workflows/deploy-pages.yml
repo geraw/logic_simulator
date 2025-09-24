@@ -1,0 +1,58 @@
+name: Deploy WebUI (Static Placeholder)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      - name: Build static placeholder
+        run: |
+          mkdir -p dist
+          cp webui/templates/index.html dist/index.html || echo "No index yet"
+          # Inject note about dynamic backend
+          cat <<'EOF' > dist/index.html
+          <!DOCTYPE html>
+          <html><head><meta charset='utf-8'><title>Logic Simulator (Static Build)</title></head>
+          <body>
+          <h1>Logic Simulator Web UI</h1>
+          <p>This GitHub Pages deployment is a static placeholder. The full interactive version requires a Python backend (FastAPI) and cannot run purely as static files without porting the simulator to WebAssembly/JavaScript.</p>
+          <p>Planned approaches to enable full in-browser execution:</p>
+          <ol>
+            <li>Port parser + simulator to pure JS (recommended shortest path)</li>
+            <li>Transpile Python to WebAssembly using Pyodide (heavier download ~10MB+)</li>
+            <li>Host the FastAPI backend on a free service (Railway/Fly.io/Render) and keep this static UI as a frontend consuming JSON APIs</li>
+          </ol>
+          <p>Repository: <a href='https://github.com/geraw/AliceBobCasino'>AliceBobCasino</a></p>
+          </body></html>
+          EOF
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

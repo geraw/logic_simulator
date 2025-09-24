@@ -84,9 +84,15 @@
       background-color: #ffc107;
       border: 1px solid #d39e00;
       border-radius: 4px;
-      padding: 4px 12px;
+      padding: 6px 16px;
       font-weight: bold;
       margin-left: 20px;
+      font-size: 1.05em;
+      box-shadow: 0 1px 4px #0003;
+      transition: background-color 0.2s;
+    }
+    #checkSolutionBtn:hover {
+      background-color: #ffca2c;
     }
   </style>
 </head>
@@ -176,6 +182,16 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
     if (e.key === 'Escape') {
       document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     }
+    if (e.ctrlKey && (e.key === 'q' || e.key === 'Q')) {
+      e.preventDefault(); // Prevent browser default action for Ctrl+Q
+      const selectedChallenge = challengeSelect.value;
+      if (selectedChallenge) {
+        loadChallengeCode(selectedChallenge);
+        log(`Loaded solution for ${selectedChallenge} via shortcut.`);
+      } else {
+        log('No challenge selected to load via shortcut.');
+      }
+    }
   });
 
   function log(msg){ logEl.textContent += msg + "\n"; logEl.scrollTop = logEl.scrollHeight; }
@@ -185,8 +201,7 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
     logModal.style.display = 'flex';
   });
 
-  document.getElementById('mainReadmeBtn').addEventListener('click', async function(e){
-    e.preventDefault();
+  async function showMainReadme() {
     try {
       const readmePath = `../../webui/README.md`;
       const r = await fetch(readmePath);
@@ -200,6 +215,11 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
       log('Error showing main README: ' + e.message);
       alert('Could not load main README.');
     }
+  }
+
+  document.getElementById('mainReadmeBtn').addEventListener('click', async function(e){
+    e.preventDefault();
+    showMainReadme();
   });
 
   async function showChallengeReadme(challengeName) {
@@ -268,9 +288,9 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
       challengesPanel.appendChild(checkBtn);
       checkBtn.addEventListener('click', scoreChallenge);
 
-      // Show README of first challenge by default
+      // Show README of first challenge by default, but don't show main readme
       if (data.challenges.length > 0) {
-        showChallengeReadme(data.challenges[0]);
+        // showChallengeReadme(data.challenges[0]);
       }
     } catch(e){ log('No challenge index found.'); }
   }
@@ -498,6 +518,9 @@ def simulate_inline(code:str, inputs:dict, steps:int):
 
   document.getElementById('runBtn').addEventListener('click', simulate);
   loadChallenges();
+  
+  // Show main readme on initial load
+  showMainReadme();
 </script>
 </body>
 </html>

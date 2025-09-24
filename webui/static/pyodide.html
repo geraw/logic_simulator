@@ -16,14 +16,39 @@
     header { background:#222; color:#fff; padding:8px 14px; font-weight:600; flex-shrink: 0; }
     #menu { background:#eee; border-bottom:1px solid #ccc; padding:6px 14px; display:flex; gap:18px; align-items:center; flex-shrink: 0; }
     main { flex:1; display:flex; flex-direction:column; gap:8px; padding:8px; overflow:hidden; min-height:0; padding-bottom: 50px; /* Space for footer */ }
-    #editor { flex: 8; min-height:0; }
+    /* MODIFICATION: Changed #editor selector to .CodeMirror to correctly target the editor element */
+    .CodeMirror { flex: 1 1 60%; min-height: 200px; }
   .panel { background:#f5f5f5; padding:8px; margin-bottom:8px; border:1px solid #ccc; border-radius:4px; overflow:visible; }
     .inputs-panel { flex: 0 0 auto; }
-    .outputs-section { flex: 2; min-height:0; display:flex; flex-direction:column; 
+    .resizer {
+      height: 8px;
+      background: #ddd;
+      cursor: row-resize;
+      border-top: 1px solid #bbb;
+      border-bottom: 1px solid #bbb;
+      position: relative;
+      flex: 0 0 8px;
+      margin: 0;
+    }
+    .resizer:hover {
+      background: #ccc;
+    }
+    .resizer::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 2px;
+      background: #999;
+      border-radius: 1px;
+    }
+    .outputs-section { flex: 1 1 40%; min-height: 100px; display:flex; flex-direction:column;
     }
     .outputs-panel { flex:1; min-height:0; }
     #outputs {
-      height: 100px; 
+      height: 100px;
       overflow-y: auto;
       padding-right: 4px;
       width: 100%;
@@ -47,7 +72,7 @@
     #runBtn .btn-content {
       display: inline-flex;
       height: 0.12em;
-      align-items: center; 
+      align-items: center;
     }
     #runBtn:hover {
       background: linear-gradient(90deg, #43a047 60%, #2e7031 100%);
@@ -84,7 +109,6 @@
     #challengesPanel { display: flex; gap: 8px; align-items: center; }
     #challengesPanel button { background: #e0e0e0; border: 1px solid #bbb; border-radius: 4px; padding: 4px 10px; }
     #challengesPanel button.active { background: #cce5ff; border-color: #007bff; }
-    #footerControls { display: flex; gap: 15px; align-items: center; }
     #challengesPanel #checkSolutionBtn {
       background-color: #eace80 !important;
       border: 1px solid #d39e00 !important;
@@ -125,21 +149,19 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
   <label>Steps: <input id="steps" type="number" value="16" min="1" max="256" /></label>
   <button id="runBtn"><span class="btn-content"><span class="play-icon" style="font-size:0.9em;">&#9654;</span>Simulate</span></button>
   </div>
+  <div class="resizer" id="resizer"></div>
   <div class="outputs-section">
     <label style="font-weight:600; margin-bottom:4px; display:block;">Outputs</label>
     <div class="panel outputs-panel">
       <div id="outputs"></div>
     </div>
   </div>
-  <!-- Error Modal -->
   <div id="errorModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('errorModal').style.display='none'">&times;</button>
-      <!-- <h4>Error</h4> -->
       <div id="errormsg"></div>
     </div>
   </div>
-  <!-- Log Modal -->
   <div id="logModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('logModal').style.display='none'">&times;</button>
@@ -147,7 +169,6 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
       <pre id="log"></pre>
     </div>
   </div>
-  <!-- Score Modal -->
   <div id="scoreModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('scoreModal').style.display='none'">&times;</button>
@@ -155,11 +176,9 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
       <div id="scoreresult"></div>
     </div>
   </div>
-  <!-- README Modal -->
   <div id="readmeModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('readmeModal').style.display='none'">&times;</button>
-      <!-- <h3>README</h3> -->
       <div id="readmeContent" style="white-space: pre-wrap;"></div>
     </div>
   </div>
@@ -238,7 +257,7 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
       const html = converter.makeHtml(readmeText);
       document.getElementById('readmeContent').innerHTML = html;
       readmeModal.style.display = 'flex';
-      
+
       // Also update the internal state and UI to reflect the selection
       challengeSelect.value = challengeName;
       document.querySelectorAll('#challengesPanel button').forEach(btn => {
@@ -382,6 +401,90 @@ def simulate_inline(code:str, inputs:dict, steps:int):
     checkSyntaxLive(editor.getValue());
   });
 
+  // Resizer functionality
+  let isResizing = false;
+
+  document.getElementById('resizer').addEventListener('mousedown', function(e) {
+    isResizing = true;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isResizing) return;
+
+    // MODIFICATION: Replaced getElementById with editor.getWrapperElement()
+    const editorElement = editor.getWrapperElement();
+    if (!editorElement) return;
+
+    const main = document.querySelector('main');
+    const mainRect = main.getBoundingClientRect();
+    const outputsSection = document.querySelector('.outputs-section');
+    const inputsPanel = document.querySelector('.inputs-panel');
+
+    // Calculate new position relative to main container
+    const mouseY = e.clientY - mainRect.top;
+    const inputsPanelHeight = inputsPanel.offsetHeight + 8; // Include gap
+    const resizerHeight = 8;
+    const totalAvailableHeight = main.clientHeight - inputsPanelHeight - resizerHeight - 16; // Account for padding
+
+    // Minimum sizes
+    const minEditorHeight = 100; // Adjusted min height
+    const minOutputsHeight = 80; // Adjusted min height
+
+    // Calculate new editor height based on mouse position
+    let newEditorHeight = mouseY - inputsPanelHeight;
+
+    // Enforce minimum and maximum sizes
+    if (newEditorHeight < minEditorHeight) {
+      newEditorHeight = minEditorHeight;
+    } else if (newEditorHeight > totalAvailableHeight - minOutputsHeight) {
+      newEditorHeight = totalAvailableHeight - minOutputsHeight;
+    }
+
+    const newOutputsHeight = totalAvailableHeight - newEditorHeight;
+
+    // Apply new heights directly using pixels during drag
+    editorElement.style.flex = 'none';
+    editorElement.style.height = newEditorHeight + 'px';
+    outputsSection.style.flex = 'none';
+    outputsSection.style.height = newOutputsHeight + 'px';
+
+    // Refresh CodeMirror to handle resize
+    editor.refresh();
+  });
+
+document.addEventListener('mouseup', function() {
+    if (isResizing) {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+
+      // Get the elements again
+      const editorElement = editor.getWrapperElement();
+      const outputsSection = document.querySelector('.outputs-section');
+
+      if (editorElement && outputsSection) {
+          const totalHeight = editorElement.offsetHeight + outputsSection.offsetHeight;
+          if (totalHeight > 0) {
+              // Calculate the new flex-grow proportions based on the final pixel heights
+              const newEditorFlexGrow = editorElement.offsetHeight / totalHeight;
+              const newOutputsFlexGrow = outputsSection.offsetHeight / totalHeight;
+
+              // Apply new flex values with a flex-basis of 0% to make the proportions stick
+              // This overrides the original CSS and makes the new layout permanent until the next drag.
+              editorElement.style.flex = `${newEditorFlexGrow} 1 0%`;
+              outputsSection.style.flex = `${newOutputsFlexGrow} 1 0%`;
+              
+              // Remove the explicit height styles to let the new flex rules take over
+              editorElement.style.height = null;
+              outputsSection.style.height = null;
+          }
+      }
+    }
+  });
+  
   async function simulate(){
     const pyodide = await pyodideReadyPromise;
     statusEl.textContent = 'Simulating...';
@@ -523,7 +626,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
 
   document.getElementById('runBtn').addEventListener('click', simulate);
   loadChallenges();
-  
+
   // Show main readme on initial load
   showMainReadme();
 </script>

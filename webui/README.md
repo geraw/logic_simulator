@@ -1,92 +1,45 @@
-# Logic Simulator Web UI
 
-Two delivery modes are supported:
+# Logic Simulator Web UI (Zero Install, Pure Static Hosting)
 
-1. Dynamic server (FastAPI) – original prototype (`webui/app.py`).
-2. 100% static, in‑browser Python via Pyodide / WebAssembly (`webui/static/pyodide.html`).
+This project is now **100% static** and runs entirely in the browser using Pyodide (WebAssembly Python). No server or installation required.
 
----
-## 1. FastAPI Mode (Dynamic Backend)
+## Usage
 
-### Features
-- Code editing (CodeMirror) + simulate via Python backend
-- Runs scoring scripts server‑side
+1. Open [`webui/static/pyodide.html`](webui/static/pyodide.html) in your browser.
+	- For GitHub Pages: `https://<your_user>.github.io/<repo>/webui/static/pyodide.html`
+	- For local testing: run a static server (e.g. `python -m http.server 8001`) and open `http://127.0.0.1:8001/webui/static/pyodide.html`
 
-### Run Locally
+## Features
+- Edit circuit code with syntax highlighting (custom CodeMirror mode)
+- Enter input bitstreams per signal
+- Simulate and view outputs (all logic runs in-browser)
+- Run challenge scoring (fetches each challenge's `score.py` and executes in Pyodide)
 
-```bash
-pip install fastapi uvicorn jinja2 python-multipart pygments
-python -m webui.app
-```
-Open: http://127.0.0.1:8000
-
----
-## 2. Pure Static (Pyodide) Mode
-
-`webui/static/pyodide.html` loads Pyodide in the browser, fetches the existing `simulator.py`, `circuit_parser.py`, and `grammar.lark`, installs `lark` via `micropip`, and executes simulations entirely client‑side. No server needed – suitable for GitHub Pages.
-
-### What Works Now
-- Simulate arbitrary circuit text
-- Provide inputs (e.g. `X=1010;Y=11`) and steps
-- Run challenge scoring (fetches each challenge's `score.py` and executes it in Pyodide)
-
-### Try It (after publishing on GitHub Pages)
-Navigate to: `https://<your_user>.github.io/<repo>/webui/static/pyodide.html`
-
-If running locally without a server, most browsers block `fetch()` of local files. Use a tiny dev server:
-```bash
-python -m http.server 8001
-# then open http://127.0.0.1:8001/webui/static/pyodide.html
-```
-
-### How It Works Internally
-1. Loads Pyodide runtime
+## How It Works
+1. Loads Pyodide runtime in the browser
 2. Installs `lark` (pure Python) with `micropip`
-3. Fetches project Python sources (relative paths) & writes them into Pyodide's virtual FS
-4. Exposes JS helpers: `simulate(code, inputs, steps)` and `score(challenge, code)`
-5. Scoring fetches `challenges/<id>/score.py`, loads it, writes a temp circuit `_web_submission.cir`, runs `verify_circuit()`.
+3. Fetches project Python sources (`simulator.py`, `circuit_parser.py`, `grammar.lark`, etc.) and writes them into Pyodide's virtual FS
+4. Runs simulation and scoring entirely client-side
 
-### Limitations / Next Improvements
+## Limitations / Next Improvements
 - Initial load (~ a few MB) due to Pyodide + lark
 - No offline caching strategy (could add Service Worker)
 - Waveform view still textual
-- No custom syntax highlighting yet (current mode = plain text)
+- LocalStorage persistence per challenge (planned)
+- SVG waveform panel (planned)
 
----
-## 3. Choosing a Mode
-| Goal | Recommended | Notes |
-|------|-------------|-------|
-| Quick local dev | FastAPI | Faster incremental edits |
-| Zero install demo | Pyodide | Pure static hosting |
-| Lowest load time | JS port (future) | Would remove Pyodide overhead |
+## Security Considerations
+All code runs in the browser sandbox. Scoring scripts are executed as Python in Pyodide; do not fetch untrusted code.
 
----
-## 4. Security Considerations
-Both modes execute user‑supplied Python-equivalent logic (your circuit DSL is safe, but scoring scripts are code). Do **not** expose dynamic mode publicly without sandboxing. Pyodide runs in browser sandbox (safer) but still executes fetched Python packages.
-
----
-## 5. File Reference
+## File Reference
 | File | Purpose |
 |------|---------|
-| `webui/app.py` | FastAPI backend server |
-| `webui/templates/index.html` | Dynamic UI template |
-| `webui/static/pyodide.html` | Stand‑alone static Pyodide UI |
-| `webui/static/pyodide.js` | JS glue for Pyodide simulator & scoring |
+| `webui/static/pyodide.html` | Main static UI (Pyodide) |
+| `webui/static/circuit_mode.js` | Custom CodeMirror mode for circuit DSL |
 | `webui/static/challenges_index.json` | Static list of challenge IDs (used by Pyodide UI) |
 
----
-## 6. Roadmap Ideas
-- Custom CodeMirror mode for the circuit DSL
-- SVG waveform panel
-- LocalStorage persistence per challenge
-- Service Worker for offline caching
-- JS-native parser/simulator (remove Pyodide)
+## Contributing
+PRs welcome. Keep static mode up to date with any core logic changes.
 
----
-## 7. Contributing
-PRs welcome. Keep static + dynamic modes in sync when adjusting core logic.
 
----
-## 8. License
-(Add license details here if applicable.)
 

@@ -31,7 +31,8 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.ctrlKey && (e.key === 'q' || e.key === 'Q')) {
     e.preventDefault(); // Prevent browser default action for Ctrl+Q
-    const selectedChallenge = challengeSelect.value;
+    const activeBtn = document.querySelector('#challengesPanel button.active');
+    const selectedChallenge = challengeSelect ? challengeSelect.value : (activeBtn ? activeBtn.dataset.challenge : null);
     if (selectedChallenge) {
       loadChallengeCode(selectedChallenge);
       log(`Loaded solution for ${selectedChallenge} via shortcut.`);
@@ -55,7 +56,7 @@ document.getElementById('logMenuBtn').addEventListener('click', function() {
 // README display functions
 async function showMainReadme() {
   try {
-    const readmePath = `../../webui/README.md`;
+  const readmePath = `/webui/README.md`;
     const r = await fetch(readmePath);
     if (!r.ok) throw new Error(`Could not fetch main README`);
     const readmeText = await r.text();
@@ -80,7 +81,7 @@ async function showChallengeReadme(challengeName) {
     return; 
   }
   try {
-    const readmePath = `../../challenges/${challengeName}/README.md`;
+  const readmePath = `/challenges/${challengeName}/README.md`;
     const r = await fetch(readmePath);
     if (!r.ok) throw new Error(`Could not fetch README for ${challengeName}`);
     const readmeText = await r.text();
@@ -90,14 +91,19 @@ async function showChallengeReadme(challengeName) {
     readmeModal.style.display = 'flex';
 
     // Update internal state and UI to reflect the selection
-    challengeSelect.value = challengeName;
+    if (challengeSelect) {
+      challengeSelect.value = challengeName;
+    }
+    else {
+      log('No challengeSelect element, using buttons only');
+    }
     document.querySelectorAll('#challengesPanel button').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.challenge === challengeName);
     });
 
   } catch (e) {
     log('Error showing README: ' + e.message);
-    alert('Could not load README for this challenge.');
+    //alert('Could not load README for this challenge.');
   }
 }
 
@@ -105,8 +111,8 @@ async function showChallengeReadme(challengeName) {
 async function loadChallengeCode(challengeName) {
   if (!challengeName) return;
   try {
-    const path = `../../challenges/${challengeName}/solution.cir`;
-    const response = await fetch(path);
+  const path = `/challenges/${challengeName}/solution.cir`;
+  const response = await fetch(path);
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const code = await response.text();
     editor.setValue(code);
@@ -123,35 +129,47 @@ challengesPanel.addEventListener('click', (e) => {
   }
 });
 
-// Load challenges from index
+// Load challenges from a hardcoded list (no network fetch)
 async function loadChallenges() {
-  try {
-    const r = await fetch('challenges_index.json');
-    const data = await r.json();
-    data.challenges.forEach(c => {
-      // Populate hidden select
+  const challenges = [
+    '01-palindrome',
+    '02-debruijn',
+    '03-comparison',
+    '04-majority',
+    '05-checksum',
+    '06-CRC',
+    '99-alice_bob_casino'
+  ];
+
+  challenges.forEach(c => {
+    // Populate hidden select if present
+    if (challengeSelect) {
       const opt = document.createElement('option');
-      opt.value = c; 
-      opt.textContent = c; 
+      opt.value = c;
+      opt.textContent = c;
       challengeSelect.appendChild(opt);
+    }
 
-      // Create button in the panel
-      const btn = document.createElement('button');
-      btn.textContent = c;
-      btn.dataset.challenge = c;
-      challengesPanel.appendChild(btn);
-    });
-    
-    // Add score button at the end
-    const checkBtn = document.createElement('button');
-    checkBtn.textContent = 'Check Solution';
-    checkBtn.id = 'checkSolutionBtn';
-    challengesPanel.appendChild(checkBtn);
-    checkBtn.addEventListener('click', scoreChallenge);
+    // Create button in the panel
+    const btn = document.createElement('button');
+    btn.textContent = c;
+    btn.dataset.challenge = c;
+    challengesPanel.appendChild(btn);
+  });
 
-  } catch (e) { 
-    log('No challenge index found.'); 
+  // If using buttons-only UI, set the first challenge as active by default
+  const anyActive = document.querySelector('#challengesPanel button.active');
+  if (!anyActive) {
+    const firstBtn = document.querySelector('#challengesPanel button[data-challenge]');
+    if (firstBtn) firstBtn.classList.add('active');
   }
+
+  // Add score button at the end
+  const checkBtn = document.createElement('button');
+  checkBtn.textContent = 'Check Solution';
+  checkBtn.id = 'checkSolutionBtn';
+  challengesPanel.appendChild(checkBtn);
+  checkBtn.addEventListener('click', scoreChallenge);
 }
 
 // Pyodide initialization
@@ -169,8 +187,8 @@ let pyodideReadyPromise = (async () => {
     return await r.text(); 
   }
   
-  // Load project files (we are in webui/static/, project root is two levels up)
-  const rootPrefix = '../../';
+  // Load project files relative to the server root
+  const rootPrefix = '/';
   const files = ['circuit_parser.py', 'simulator.py', 'grammar.lark', 'scoring_framework.py'];
   for (const f of files) {
     let ok = false;
@@ -560,7 +578,8 @@ async function simulate() {
 
 // Challenge scoring function
 async function scoreChallenge() {
-  const challenge = challengeSelect.value;
+  const activeBtn = document.querySelector('#challengesPanel button.active');
+  const challenge = challengeSelect ? challengeSelect.value : (activeBtn ? activeBtn.dataset.challenge : null);
   if (!challenge) { 
     log('No challenge selected'); 
     return; 

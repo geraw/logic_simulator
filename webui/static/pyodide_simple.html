@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Logic Simulator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/addon/mode/simple.min.js"></script>
+  <script src="circuit_mode.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; font-family: system-ui, sans-serif; }
+    
+    body {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    
+    /* Header - Fixed height */
+    .header {
+      background: #333;
+      color: white;
+      padding: 12px 16px;
+      flex-shrink: 0;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      font-weight: 600;
+      font-size: 18px;
+    }
+    
+    /* Main container for flexible panels */
+    .main-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    
+    /* Editor panel - 80% initially */
+    .editor-panel {
+      flex: 4 1 0;
+      min-height: 200px;
+      border: 1px solid #ddd;
+      position: relative;
+    }
+    
+    .CodeMirror {
+      height: 100%;
+      width: 100%;
+    }
+    
+    #code {
+      display: none;
+    }
+    
+    /* Inputs panel - Fixed size */
+    .inputs-panel {
+      background: #f5f5f5;
+      border: 1px solid #ccc;
+      padding: 12px 16px;
+      flex-shrink: 0;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      height: 50px;
+    }
+    
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .input-group label {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .input-group input {
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 14px;
+    }
+    
+    #inputs {
+      width: 200px;
+    }
+    
+    #steps {
+      width: 60px;
+    }
+    
+    #runBtn {
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 8px;
+    }
+    
+    #runBtn:hover {
+      background: #45a049;
+    }
+    
+    /* Resizer */
+    .resizer {
+      height: 6px;
+      background: #ddd;
+      cursor: row-resize;
+      flex-shrink: 0;
+      border-top: 1px solid #bbb;
+      border-bottom: 1px solid #bbb;
+      position: relative;
+    }
+    
+    .resizer:hover {
+      background: #ccc;
+    }
+    
+    .resizer::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 2px;
+      background: #999;
+      border-radius: 1px;
+    }
+    
+    /* Outputs panel - 20% initially */
+    .outputs-panel {
+      flex: 1 1 0;
+      min-height: 100px;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .outputs-header {
+      background: #e0e0e0;
+      padding: 8px 16px;
+      font-weight: bold;
+      font-size: 14px;
+      border-bottom: 1px solid #ccc;
+      flex-shrink: 0;
+    }
+    
+    #outputs {
+      flex: 1;
+      padding: 12px 16px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    /* Footer - Fixed size */
+    .footer {
+      background: #f0f0f0;
+      border-top: 1px solid #ccc;
+      padding: 8px 16px;
+      flex-shrink: 0;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    
+    #status {
+      color: #666;
+    }
+    
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      padding: 24px;
+      min-width: 320px;
+      max-width: 80vw;
+      max-height: 80vh;
+      overflow: auto;
+      position: relative;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-size: 18px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header - Fixed height -->
+  <div class="header">
+    Logic Simulator
+  </div>
+
+  <!-- Main container for flexible panels -->
+  <div class="main-container">
+    <!-- Editor panel - 80% initially -->
+    <div class="editor-panel">
+      <textarea id="code"># Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
+
+# An n-bit binary counter using D flip-flops and NAND gates
+O0 = XOR(D(O0,0),I)
+O1 = XOR(D(O1,0), AND(D(O0,0),I))
+O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))</textarea>
+    </div>
+
+    <!-- Inputs panel - Fixed size -->
+    <div class="inputs-panel">
+      <div class="input-group">
+        <label>Inputs:</label>
+        <input id="inputs" value="I=0010010100101111" placeholder="I=1010;X=11" />
+      </div>
+      <div class="input-group">
+        <label>Steps:</label>
+        <input id="steps" type="number" value="16" min="1" max="256" />
+      </div>
+      <button id="runBtn">
+        <span>▶</span>
+        Simulate
+      </button>
+      <div class="input-group" style="margin-left: auto;">
+        <button id="logBtn" style="background: #666; color: white; border: none; padding: 4px 12px; border-radius: 3px; cursor: pointer;">Show Log</button>
+      </div>
+    </div>
+
+    <!-- Resizer -->
+    <div class="resizer" id="resizer"></div>
+
+    <!-- Outputs panel - 20% initially -->
+    <div class="outputs-panel">
+      <div class="outputs-header">Outputs</div>
+      <div id="outputs"></div>
+    </div>
+  </div>
+
+  <!-- Footer - Fixed size -->
+  <div class="footer">
+    <div>Logic Circuit Simulator</div>
+    <div id="status"></div>
+  </div>
+
+  <!-- Log Modal -->
+  <div id="logModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" onclick="document.getElementById('logModal').style.display='none'">&times;</button>
+      <h3>Log</h3>
+      <pre id="log" style="background: #f5f5f5; padding: 12px; border-radius: 4px; max-height: 400px; overflow-y: auto;"></pre>
+    </div>
+  </div>
+
+  <!-- Error Modal -->
+  <div id="errorModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button class="modal-close" onclick="document.getElementById('errorModal').style.display='none'">&times;</button>
+      <div id="errormsg"></div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize CodeMirror
+    let editor = CodeMirror.fromTextArea(document.getElementById('code'), { 
+      lineNumbers: true, 
+      mode: 'circuitdsl'
+    });
+    
+    // Make sure CodeMirror fills the panel
+    const editorWrapper = editor.getWrapperElement();
+    if (editorWrapper) {
+      editorWrapper.style.height = '100%';
+    }
+
+    // Elements
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    const logModal = document.getElementById('logModal');
+    const errorModal = document.getElementById('errorModal');
+
+    // Log function
+    function log(msg) {
+      logEl.textContent += msg + "\n";
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Show log modal
+    document.getElementById('logBtn').addEventListener('click', function() {
+      logModal.style.display = 'flex';
+    });
+
+    // Simple resizer functionality
+    let isResizing = false;
+    let startY = 0;
+
+    document.getElementById('resizer').addEventListener('mousedown', function(e) {
+      isResizing = true;
+      startY = e.clientY;
+      document.body.style.cursor = 'row-resize';
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+      if (!isResizing) return;
+
+      const mainContainer = document.querySelector('.main-container');
+      const editorPanel = document.querySelector('.editor-panel');
+      const outputsPanel = document.querySelector('.outputs-panel');
+      const inputsPanel = document.querySelector('.inputs-panel');
+      const resizer = document.getElementById('resizer');
+      
+      if (!mainContainer || !editorPanel || !outputsPanel) return;
+
+      // Calculate available height (total - fixed elements)
+      const containerHeight = mainContainer.clientHeight;
+      const fixedHeight = inputsPanel.offsetHeight + resizer.offsetHeight;
+      const availableHeight = containerHeight - fixedHeight;
+
+      // Calculate mouse position relative to container
+      const containerRect = mainContainer.getBoundingClientRect();
+      const mouseY = e.clientY - containerRect.top;
+      
+      // Calculate new editor height (subtract inputs panel height)
+      let newEditorHeight = mouseY - inputsPanel.offsetHeight;
+      
+      // Enforce minimum sizes
+      const minEditorHeight = 150;
+      const minOutputHeight = 100;
+      
+      if (newEditorHeight < minEditorHeight) {
+        newEditorHeight = minEditorHeight;
+      } else if (newEditorHeight > availableHeight - minOutputHeight) {
+        newEditorHeight = availableHeight - minOutputHeight;
+      }
+      
+      const newOutputHeight = availableHeight - newEditorHeight;
+      
+      // Apply heights directly
+      editorPanel.style.flex = 'none';
+      editorPanel.style.height = newEditorHeight + 'px';
+      outputsPanel.style.flex = 'none';
+      outputsPanel.style.height = newOutputHeight + 'px';
+      
+      // Refresh CodeMirror
+      editor.refresh();
+    });
+
+    document.addEventListener('mouseup', function() {
+      if (isResizing) {
+        isResizing = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    });
+
+    // Simulate button (placeholder)
+    document.getElementById('runBtn').addEventListener('click', function() {
+      statusEl.textContent = 'Simulation started...';
+      log('Simulate button clicked');
+      
+      // Placeholder - you can add your simulation logic here
+      setTimeout(() => {
+        statusEl.textContent = 'Ready';
+        document.getElementById('outputs').innerHTML = '<div>Sample output: O0=1010, O1=0101</div>';
+      }, 1000);
+    });
+
+    // Initial status
+    statusEl.textContent = 'Ready';
+    log('Logic Simulator initialized');
+  </script>
+</body>
+</html>

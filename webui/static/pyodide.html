@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Logic Simulator (Pyodide)</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/codemirror@5.65.16/lib/codemirror.min.js"></script>
@@ -15,10 +16,13 @@
     body { font-family: system-ui, sans-serif; height:100vh; display:flex; flex-direction:column; overflow:hidden; }
     header { background:#222; color:#fff; padding:8px 14px; font-weight:600; flex-shrink: 0; }
     #menu { background:#eee; border-bottom:1px solid #ccc; padding:6px 14px; display:flex; gap:18px; align-items:center; flex-shrink: 0; }
-    main { flex:1; display:flex; flex-direction:column; gap:8px; padding:8px; overflow:hidden; min-height:0; padding-bottom: 50px; /* Space for footer */ }
+    main { flex:1; display:flex; flex-direction:column; gap:8px; padding:8px; padding-bottom:60px; overflow:hidden; min-height:0; }
+    /* Hide the original textarea since CodeMirror replaces it */
+    #code { display: none; }
+    
     /* CodeMirror editor styling */
     .CodeMirror { 
-      flex: 1 1 60%; 
+      /* flex: 4 1 80%;  */
       min-height: 200px; 
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -50,7 +54,7 @@
       border-radius: 1px;
     }
     .outputs-section { 
-      flex: 1 1 40%; 
+      flex: 1 1 20%; 
       min-height: 100px; 
       display: flex; 
       flex-direction: column;
@@ -132,6 +136,179 @@
     #checkSolutionBtn:hover {
       background-color: #ffca2c;
     }
+    
+    /* Mobile-specific styles */
+    @media (max-width: 768px) {
+      /* Make header more compact */
+      header {
+        padding: 6px 12px;
+        font-size: 16px;
+      }
+      
+      /* Adjust menu layout for mobile */
+      #menu {
+        padding: 4px 12px;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      
+      /* Make main content more compact */
+      main {
+        padding: 4px;
+        gap: 4px;
+        padding-bottom: 55px; /* Account for taller footer on mobile */
+      }
+      
+      /* Adjust inputs panel for mobile */
+      .inputs-panel {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+        align-items: stretch;
+      }
+      
+      .inputs-panel label {
+        font-size: 14px;
+      }
+      
+      .inputs-panel input {
+        width: 100%;
+        padding: 8px;
+        font-size: 16px; /* Prevents zoom on iOS */
+        border-radius: 4px;
+      }
+      
+      /* Make run button touch-friendly */
+      #runBtn {
+        padding: 12px 20px;
+        font-size: 16px;
+        margin-left: 0;
+        margin-top: 4px;
+        touch-action: manipulation;
+      }
+      
+      /* Adjust resizer for touch */
+      .resizer {
+        height: 12px; /* Larger touch target */
+        cursor: row-resize;
+      }
+      
+      .resizer::after {
+        width: 50px;
+        height: 3px;
+      }
+      
+      /* Make CodeMirror more mobile-friendly */
+      .CodeMirror {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      
+      .CodeMirror-linenumber {
+        padding: 0 4px;
+      }
+      
+      /* Adjust outputs for mobile */
+      #outputs {
+        font-size: 12px;
+        padding: 8px;
+      }
+      
+      /* Make footer more compact */
+      footer {
+        padding: 6px 12px;
+        height: 55px;
+        flex-direction: column;
+        gap: 4px;
+      }
+      
+      #challengesPanel {
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+      }
+      
+      #challengesPanel button {
+        padding: 6px 12px;
+        font-size: 12px;
+        touch-action: manipulation;
+      }
+      
+      #checkSolutionBtn {
+        margin-left: 0 !important;
+        padding: 8px 16px !important;
+      }
+      
+      /* Modal adjustments for mobile */
+      .modal-content {
+        margin: 20px;
+        padding: 20px;
+        max-width: calc(100vw - 40px);
+        max-height: calc(100vh - 40px);
+      }
+      
+      /* Status text smaller on mobile */
+      #status {
+        font-size: 11px;
+        text-align: center;
+      }
+      
+      /* Make buttons more touch-friendly */
+      button {
+        min-height: 44px; /* iOS recommended touch target */
+        touch-action: manipulation;
+      }
+      
+      /* Prevent text selection during touch interactions */
+      .resizer {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+    }
+    
+    /* Extra small screens (phones in portrait) */
+    @media (max-width: 480px) {
+      header {
+        font-size: 14px;
+        padding: 4px 8px;
+      }
+      
+      main {
+        padding: 2px;
+        gap: 2px;
+      }
+      
+      .CodeMirror {
+        font-size: 12px;
+      }
+      
+      .inputs-panel {
+        padding: 6px;
+      }
+      
+      .inputs-panel input {
+        padding: 10px;
+      }
+      
+      #runBtn {
+        padding: 14px 24px;
+        font-size: 14px;
+      }
+      
+      footer {
+        height: 60px;
+        padding: 4px 8px;
+      }
+      
+      #challengesPanel button {
+        padding: 8px 12px;
+        font-size: 11px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -203,6 +380,15 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
 </footer>
 <script>
   let editor = CodeMirror.fromTextArea(document.getElementById('code'), { lineNumbers:true, mode:'circuitdsl', gutters: ["CodeMirror-linenumbers", "syntax-errors"] });
+  
+  // Ensure the CodeMirror wrapper element gets proper flex styling
+  const editorWrapper = editor.getWrapperElement();
+  if (editorWrapper) {
+    editorWrapper.style.flex = '4 1 80%';
+    editorWrapper.style.minHeight = '200px';
+    console.log('CodeMirror wrapper configured for flex layout - 80% editor, 20% outputs');
+  }
+  
   const statusEl = document.getElementById('status');
   const logEl = document.getElementById('log');
   const challengeSelect = document.getElementById('challengeSelect');
@@ -416,68 +602,122 @@ def simulate_inline(code:str, inputs:dict, steps:int):
   let startEditorHeight = 0;
   let startOutputsHeight = 0;
 
-  document.getElementById('resizer').addEventListener('mousedown', function(e) {
+  function startResize(clientY) {
     isResizing = true;
-    startY = e.clientY;
+    startY = clientY;
     
     // Get current heights
     const editorElement = editor.getWrapperElement();
     const outputsSection = document.querySelector('.outputs-section');
-    startEditorHeight = editorElement.offsetHeight;
-    startOutputsHeight = outputsSection.offsetHeight;
+    
+    if (editorElement && outputsSection) {
+      startEditorHeight = editorElement.offsetHeight;
+      startOutputsHeight = outputsSection.offsetHeight;
+      
+      console.log('Starting resize - Editor height:', startEditorHeight, 'Outputs height:', startOutputsHeight);
+    }
     
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
+  }
+
+  // Mouse events
+  document.getElementById('resizer').addEventListener('mousedown', function(e) {
+    startResize(e.clientY);
     e.preventDefault();
   });
 
-  document.addEventListener('mousemove', function(e) {
+  // Touch events for mobile
+  document.getElementById('resizer').addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      startResize(e.touches[0].clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  function handleResize(clientY) {
     if (!isResizing) return;
 
     const editorElement = editor.getWrapperElement();
     const outputsSection = document.querySelector('.outputs-section');
-    if (!editorElement || !outputsSection) return;
+    if (!editorElement || !outputsSection) {
+      console.log('Missing elements during resize');
+      return;
+    }
 
-    // Calculate the change in mouse position
-    const deltaY = e.clientY - startY;
+    // Calculate the change in position
+    const deltaY = clientY - startY;
     
     // Calculate new heights
     let newEditorHeight = startEditorHeight + deltaY;
     let newOutputsHeight = startOutputsHeight - deltaY;
     
+    // Calculate maximum available height for better limits
+    const main = document.querySelector('main');
+    const inputsPanel = document.querySelector('.inputs-panel');
+    const resizer = document.getElementById('resizer');
+    const availableHeight = main.clientHeight - inputsPanel.offsetHeight - resizer.offsetHeight - 16; // Account for gaps
+    
     // Minimum sizes
     const minEditorHeight = 150;
     const minOutputsHeight = 100;
     
-    // Enforce minimum sizes
+    // Enforce minimum and maximum sizes
     if (newEditorHeight < minEditorHeight) {
       newEditorHeight = minEditorHeight;
-      newOutputsHeight = startEditorHeight + startOutputsHeight - newEditorHeight;
+      newOutputsHeight = availableHeight - newEditorHeight;
     } else if (newOutputsHeight < minOutputsHeight) {
       newOutputsHeight = minOutputsHeight;
-      newEditorHeight = startEditorHeight + startOutputsHeight - newOutputsHeight;
+      newEditorHeight = availableHeight - newOutputsHeight;
+    } else if (newEditorHeight + newOutputsHeight > availableHeight) {
+      // Proportionally reduce both if they exceed available space
+      const ratio = availableHeight / (newEditorHeight + newOutputsHeight);
+      newEditorHeight = Math.floor(newEditorHeight * ratio);
+      newOutputsHeight = availableHeight - newEditorHeight;
     }
 
-    // Apply new heights
-    editorElement.style.height = newEditorHeight + 'px';
-    outputsSection.style.height = newOutputsHeight + 'px';
+    // Apply new heights with !important to override flex
+    editorElement.style.setProperty('height', newEditorHeight + 'px', 'important');
+    outputsSection.style.setProperty('height', newOutputsHeight + 'px', 'important');
     
     // Override flex properties to use fixed heights during resize
-    editorElement.style.flex = 'none';
-    outputsSection.style.flex = 'none';
+    editorElement.style.setProperty('flex', 'none', 'important');
+    outputsSection.style.setProperty('flex', 'none', 'important');
 
     // Refresh CodeMirror to handle resize
     editor.refresh();
+  }
+
+  // Mouse move event
+  document.addEventListener('mousemove', function(e) {
+    handleResize(e.clientY);
   });
 
+  // Touch move event
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 1) {
+      handleResize(e.touches[0].clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  // Mouse up event
   document.addEventListener('mouseup', function() {
     if (isResizing) {
       isResizing = false;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
-      
-      // Keep the fixed heights after resize is complete
-      // This makes the resize permanent until the next resize operation
+      console.log('Resize complete');
+    }
+  });
+
+  // Touch end event
+  document.addEventListener('touchend', function() {
+    if (isResizing) {
+      isResizing = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      console.log('Resize complete');
     }
   });
   

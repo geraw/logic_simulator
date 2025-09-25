@@ -1,0 +1,453 @@
+/* Logic Simulator Styles */
+
+/* Base styles */
+* { 
+  box-sizing: border-box; 
+}
+
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  width: 100%; 
+  height: 100%; 
+}
+
+body { 
+  font-family: system-ui, sans-serif; 
+  height: 100vh; 
+  display: flex; 
+  flex-direction: column; 
+  overflow: hidden; 
+}
+
+/* Header */
+header { 
+  background: #222; 
+  color: #fff; 
+  padding: 8px 14px; 
+  font-weight: 600; 
+  flex-shrink: 0; 
+}
+
+/* Menu */
+#menu { 
+  background: #eee; 
+  border-bottom: 1px solid #ccc; 
+  padding: 6px 14px; 
+  display: flex; 
+  gap: 18px; 
+  align-items: center; 
+  flex-shrink: 0; 
+}
+
+/* Main content */
+main { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  padding: 8px; 
+  padding-bottom: 60px; 
+  overflow: hidden; 
+  min-height: 0; 
+}
+
+/* Hide the original textarea since CodeMirror replaces it */
+#code { 
+  display: none; 
+}
+
+/* CodeMirror editor styling */
+.CodeMirror { 
+  min-height: 200px; 
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Panel styles */
+.panel { 
+  background: #f5f5f5; 
+  padding: 8px; 
+  margin-bottom: 8px; 
+  border: 1px solid #ccc; 
+  border-radius: 4px; 
+  overflow: visible; 
+}
+
+.inputs-panel { 
+  flex: 0 0 auto; 
+}
+
+/* Resizer */
+.resizer {
+  height: 8px;
+  background: #ddd;
+  cursor: row-resize;
+  border-top: 1px solid #bbb;
+  border-bottom: 1px solid #bbb;
+  position: relative;
+  flex: 0 0 8px;
+  margin: 0;
+}
+
+.resizer:hover {
+  background: #ccc;
+}
+
+.resizer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 2px;
+  background: #999;
+  border-radius: 1px;
+}
+
+/* Outputs section */
+.outputs-section { 
+  flex: 1 1 20%; 
+  min-height: 100px; 
+  display: flex; 
+  flex-direction: column;
+}
+
+.outputs-panel { 
+  flex: 1; 
+  min-height: 0; 
+}
+
+#outputs {
+  height: 100px;
+  overflow-y: auto;
+  padding-right: 4px;
+  width: 100%;
+}
+
+/* Form elements */
+textarea { 
+  width: 100%; 
+  height: 80%; 
+}
+
+button { 
+  cursor: pointer; 
+}
+
+select { 
+  width: 100%; 
+}
+
+/* Run button */
+#runBtn {
+  background: linear-gradient(90deg, #4caf50 60%, #388e3c 100%);
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.15em;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 22px 8px 16px;
+  box-shadow: 0 2px 8px #0002;
+  transition: background 0.2s;
+  position: relative;
+  margin-left: 18px;
+}
+
+#runBtn .btn-content {
+  display: inline-flex;
+  height: 0.12em;
+  align-items: center;
+}
+
+#runBtn:hover {
+  background: linear-gradient(90deg, #43a047 60%, #2e7031 100%);
+}
+
+#runBtn .play-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  margin-right: 7px;
+  margin-top: -5px;
+  margin-left: -2px;
+}
+
+/* Status */
+#status { 
+  font-size: 12px; 
+  color: #555; 
+}
+
+/* Code display */
+pre { 
+  background: #111; 
+  color: #0f0; 
+  padding: 8px; 
+  overflow: auto; 
+  font-size: 13px; 
+}
+
+/* Modal styles */
+.modal { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100vw; 
+  height: 100vh; 
+  background: rgba(0,0,0,0.25); 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  z-index: 1000; 
+}
+
+.modal-content { 
+  background: #fff; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 16px #0003; 
+  padding: 24px; 
+  min-width: 320px; 
+  max-width: 80vw; 
+  max-height: 80vh; 
+  overflow: auto; 
+  position: relative; 
+}
+
+.modal-close { 
+  position: absolute; 
+  top: 8px; 
+  right: 12px; 
+  font-size: 18px; 
+  background: none; 
+  border: none; 
+  cursor: pointer; 
+  color: #333; 
+}
+
+/* Footer */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #f0f0f0;
+  border-top: 1px solid #ccc;
+  padding: 8px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  height: 50px;
+}
+
+/* Challenges panel */
+#challengesPanel { 
+  display: flex; 
+  gap: 8px; 
+  align-items: center; 
+}
+
+#challengesPanel button { 
+  background: #e0e0e0; 
+  border: 1px solid #bbb; 
+  border-radius: 4px; 
+  padding: 4px 10px; 
+}
+
+#challengesPanel button.active { 
+  background: #cce5ff; 
+  border-color: #007bff; 
+}
+
+#challengesPanel #checkSolutionBtn {
+  background-color: #eace80 !important;
+  border: 1px solid #d39e00 !important;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font-weight: bold;
+  margin-left: 20px;
+  font-size: 1.05em;
+  box-shadow: 0 1px 4px #0003;
+  transition: background-color 0.2s;
+}
+
+#checkSolutionBtn:hover {
+  background-color: #ffca2c;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  /* Make header more compact */
+  header {
+    padding: 6px 12px;
+    font-size: 16px;
+  }
+  
+  /* Adjust menu layout for mobile */
+  #menu {
+    padding: 4px 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  
+  /* Make main content more compact */
+  main {
+    padding: 4px;
+    gap: 4px;
+    padding-bottom: 55px; /* Account for taller footer on mobile */
+  }
+  
+  /* Adjust inputs panel for mobile */
+  .inputs-panel {
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    align-items: stretch;
+  }
+  
+  .inputs-panel label {
+    font-size: 14px;
+  }
+  
+  .inputs-panel input {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 4px;
+  }
+  
+  /* Make run button touch-friendly */
+  #runBtn {
+    padding: 12px 20px;
+    font-size: 16px;
+    margin-left: 0;
+    margin-top: 4px;
+    touch-action: manipulation;
+  }
+  
+  /* Adjust resizer for touch */
+  .resizer {
+    height: 12px; /* Larger touch target */
+    cursor: row-resize;
+  }
+  
+  .resizer::after {
+    width: 50px;
+    height: 3px;
+  }
+  
+  /* Make CodeMirror more mobile-friendly */
+  .CodeMirror {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .CodeMirror-linenumber {
+    padding: 0 4px;
+  }
+  
+  /* Adjust outputs for mobile */
+  #outputs {
+    font-size: 12px;
+    padding: 8px;
+  }
+  
+  /* Make footer more compact */
+  footer {
+    padding: 6px 12px;
+    height: 55px;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  #challengesPanel {
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+  }
+  
+  #challengesPanel button {
+    padding: 6px 12px;
+    font-size: 12px;
+    touch-action: manipulation;
+  }
+  
+  #checkSolutionBtn {
+    margin-left: 0 !important;
+    padding: 8px 16px !important;
+  }
+  
+  /* Modal adjustments for mobile */
+  .modal-content {
+    margin: 20px;
+    padding: 20px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+  }
+  
+  /* Status text smaller on mobile */
+  #status {
+    font-size: 11px;
+    text-align: center;
+  }
+  
+  /* Make buttons more touch-friendly */
+  button {
+    min-height: 44px; /* iOS recommended touch target */
+    touch-action: manipulation;
+  }
+  
+  /* Prevent text selection during touch interactions */
+  .resizer {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+}
+
+/* Extra small screens (phones in portrait) */
+@media (max-width: 480px) {
+  header {
+    font-size: 14px;
+    padding: 4px 8px;
+  }
+  
+  main {
+    padding: 2px;
+    gap: 2px;
+  }
+  
+  .CodeMirror {
+    font-size: 12px;
+  }
+  
+  .inputs-panel {
+    padding: 6px;
+  }
+  
+  .inputs-panel input {
+    padding: 10px;
+  }
+  
+  #runBtn {
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+  
+  footer {
+    height: 60px;
+    padding: 4px 8px;
+  }
+  
+  #challengesPanel button {
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+}

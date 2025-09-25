@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logic Simulator</title>
+  
+  <!-- External dependencies -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <script src="circuit_mode.js"></script>
+  
+  <!-- External styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <header>
+    Logic Simulator - <a href="#" id="mainReadmeBtn" style="color: #aaddff; text-decoration: none;">View Project README</a>
+  </header>
+  
+  <div id="menu">
+    <span style="display:none;">Challenge:
+      <select id="challengeSelect"></select>
+    </span>
+  </div>
+  
+  <main>
+    <textarea id="code"># Macro Definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(x, NOT(y)), AND(NOT(x), y))
+
+# An n-bit binary counter using D flip-flops and NAND gates
+O0 = XOR(D(O0,0),I)
+O1 = XOR(D(O1,0), AND(D(O0,0),I))
+O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))</textarea>
+    
+    <div class="panel inputs-panel">
+      <label>Inputs (X=101;Y=11): <input id="inputs" style="width:260px" value="I=0010010100101111" /></label>
+      <label>Steps: <input id="steps" type="number" value="16" min="1" max="256" /></label>
+      <button id="runBtn"><span class="btn-content"><span class="play-icon" style="font-size:0.9em;">&#9654;</span>Simulate</span></button>
+    </div>
+    
+    <div class="resizer" id="resizer"></div>
+    
+    <div class="outputs-section">
+      <label style="font-weight:600; margin-bottom:4px; display:block;">Outputs</label>
+      <div class="panel outputs-panel">
+        <div id="outputs"></div>
+      </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="errorModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('errorModal').style.display='none'">&times;</button>
+        <div id="errormsg"></div>
+      </div>
+    </div>
+    
+    <div id="logModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('logModal').style.display='none'">&times;</button>
+        <h3>Log</h3>
+        <pre id="log"></pre>
+      </div>
+    </div>
+    
+    <div id="scoreModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('scoreModal').style.display='none'">&times;</button>
+        <h3>Score Result</h3>
+        <div id="scoreresult"></div>
+      </div>
+    </div>
+    
+    <div id="readmeModal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <button class="modal-close" onclick="document.getElementById('readmeModal').style.display='none'">&times;</button>
+        <div id="readmeContent" style="white-space: pre-wrap;"></div>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    <div id="challengesPanel">
+      <span style="font-weight: bold; margin-right: 5px;">Challenges:</span>
+    </div>
+    <div id="footerControls">
+      <button id="logMenuBtn">Show Log</button>
+      <span id="status"></span>
+    </div>
+  </footer>
+
+  <!-- Application JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

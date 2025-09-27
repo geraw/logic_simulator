@@ -5,14 +5,15 @@ if (window.appInitialized) {
     window.appInitialized = true;
 
     // Wait for the DOM to be fully loaded before executing the script
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
 
         // Logic Simulator JavaScript Application
 
-        // Initialize CodeMirror editor
+        // Inside the DOMContentLoaded listener...
         let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             lineNumbers: true,
             mode: 'circuitdsl',
+            theme: 'material', 
             gutters: ["CodeMirror-linenumbers", "syntax-errors"]
         });
 
@@ -57,7 +58,7 @@ if (window.appInitialized) {
         }
 
         // Log modal functionality
-        document.getElementById('logMenuBtn').addEventListener('click', function() {
+        document.getElementById('logMenuBtn').addEventListener('click', function () {
             logModal.style.display = 'flex';
         });
 
@@ -78,7 +79,7 @@ if (window.appInitialized) {
             }
         }
 
-        document.getElementById('mainReadmeBtn').addEventListener('click', async function(e) {
+        document.getElementById('mainReadmeBtn').addEventListener('click', async function (e) {
             e.preventDefault();
             showMainReadme();
         });
@@ -262,7 +263,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             }
         }
 
-        editor.on('change', function() {
+        editor.on('change', function () {
             checkSyntaxLive(editor.getValue());
         });
 
@@ -438,7 +439,7 @@ json.dumps(result)
                 let resultHtml = jsRes.passed ?
                     '<span style="color:green; font-weight:bold;">All tests passed ✔</span>' :
                     '<span style="color:orange; font-weight:bold;">Tests failed ✖</span>';
-                
+
                 if (jsRes.log) {
                     resultHtml += `<pre style="background:#eee; border:1px solid #ccc; padding:8px; margin-top:12px; text-align:left;">${jsRes.log.replace(/</g, '&lt;')}</pre>`;
                 }

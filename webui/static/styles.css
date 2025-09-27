@@ -80,7 +80,7 @@ main {
 }
 
 .outputs-section { 
-  flex: 1 1 20%; /* Initial 20% height */
+  /* flex: 1 1 20%;  */
   min-height: 100px; 
   display: flex; 
   flex-direction: column;
@@ -126,8 +126,8 @@ button { cursor: pointer; }
 }
 
 pre { 
-  background: #111; 
-  color: #0f0; 
+  background: #f1f5c8; 
+  color: rgb(46, 35, 9); 
   padding: 8px; 
   overflow: auto; 
   font-size: 13px; 

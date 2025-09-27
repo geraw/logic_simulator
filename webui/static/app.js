@@ -62,12 +62,31 @@ if (window.appInitialized) {
             logModal.style.display = 'flex';
         });
 
+        // Resolve project-relative URLs robustly for GitHub Pages
+        const REPO_SLUG = 'AliceBobCasino';
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+        const idx = pathname.indexOf('/webui/static/');
+        const basePrefix = (idx >= 0 ? pathname.substring(0, idx + 1) : '/'); // '/AliceBobCasino/' or '/'
+        const buildUrl = (relPath) => new URL(relPath.replace(/^\/+/, ''), origin + basePrefix).toString();
+        async function fetchWithPagesFallback(relPath) {
+            // First try the computed base
+            let url = buildUrl(relPath);
+            let r = await fetch(url);
+            if (r.ok) return r;
+            // If served at root of *.github.io (user site), try prefixing the repo slug
+            if (basePrefix === '/' && /\.github\.io$/i.test(window.location.hostname)) {
+                const alt = `${origin}/${REPO_SLUG}/${relPath.replace(/^\/+/, '')}`;
+                const r2 = await fetch(alt);
+                if (r2.ok) return r2;
+            }
+            return r; // return original response (to preserve status/message)
+        }
+
         // README display functions
     async function showMainReadme() {
             try {
-        // Relative to webui/static -> go up one to webui/README.md
-        const readmePath = `../README.md`;
-                const r = await fetch(readmePath);
+                const r = await fetchWithPagesFallback('webui/README.md');
                 if (!r.ok) throw new Error(`Could not fetch main README`);
                 const readmeText = await r.text();
                 const converter = new showdown.Converter();
@@ -91,9 +110,7 @@ if (window.appInitialized) {
                 return;
             }
             try {
-                // Relative to webui/static -> go up two to challenges/<name>/README.md
-                const readmePath = `../../challenges/${challengeName}/README.md`;
-                const r = await fetch(readmePath);
+                const r = await fetchWithPagesFallback(`challenges/${challengeName}/README.md`);
                 if (!r.ok) throw new Error(`Could not fetch README for ${challengeName}`);
                 const readmeText = await r.text();
                 const converter = new showdown.Converter();
@@ -121,9 +138,7 @@ if (window.appInitialized) {
         async function loadChallengeCode(challengeName) {
             if (!challengeName) return;
             try {
-                // Relative to webui/static -> go up two to challenges/<name>/solution.cir
-                const path = `../../challenges/${challengeName}/solution.cir`;
-                const response = await fetch(path);
+                const response = await fetchWithPagesFallback(`challenges/${challengeName}/solution.cir`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const code = await response.text();
                 editor.setValue(code);
@@ -200,14 +215,13 @@ if (window.appInitialized) {
                 return await r.text();
             }
 
-            // Load project files relative to this page location
-            // From webui/static to repo root is ../../
-            const rootPrefix = '../../';
+            // Load project files using the same base logic
+            const rootPrefix = basePrefix;
             const files = ['circuit_parser.py', 'simulator.py', 'grammar.lark', 'scoring_framework.py'];
             for (const f of files) {
                 let ok = false;
                 try {
-                    const path = rootPrefix + f;
+                    const path = buildUrl(f);
                     const txt = await fetchText(path);
                     pyodide.FS.writeFile(f, txt);
                     log('Loaded ' + f + ' from ' + path);

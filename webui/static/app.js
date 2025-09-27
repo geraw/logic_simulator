@@ -400,15 +400,21 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 });
                 statusEl.textContent = 'Done';
             } catch (e) {
-                let fullMsg = (e && e.message) ? String(e.message) : String(e);
-                let errorText = fullMsg;
+                const fullMsg = (e && e.message) ? String(e.message) : String(e);
+                let friendly = fullMsg;
                 if (fullMsg.includes('Traceback')) {
-                    errorText = fullMsg.split('\n').filter(l => !/pyodide|run_async|_pyodide|File "<exec>"/.test(l)).join('\n');
+                    // Take the last non-empty line as the exception summary
+                    const lines = fullMsg.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    const last = lines[lines.length - 1] || fullMsg;
+                    // Optionally strip the exception type prefix (e.g., "RuntimeError:")
+                    const idx = last.indexOf(':');
+                    friendly = (idx >= 0) ? last.slice(idx + 1).trim() : last;
                 }
-                errorText = errorText.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                errorText = errorText.split('\n').map(l => l.replace(/^ +/g, m => '&nbsp;'.repeat(m.length))).join('<br>');
-                document.getElementById('errormsg').innerHTML = `<div style='font-family:monospace; white-space:pre;'>${errorText}</div>`;
+                // Escape HTML and render just the concise message
+                const safe = friendly.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                document.getElementById('errormsg').innerHTML = `<div style='font-family:monospace; white-space:pre;'>${safe}</div>`;
                 document.getElementById('errorModal').style.display = 'flex';
+                // Keep full message in log for debugging
                 log('Error: ' + fullMsg);
                 statusEl.textContent = 'Error';
             }

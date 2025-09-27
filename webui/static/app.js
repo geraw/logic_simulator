@@ -13,7 +13,7 @@ if (window.appInitialized) {
         let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             lineNumbers: true,
             mode: 'circuitdsl',
-            theme: 'material', 
+            // theme: 'material', 
             gutters: ["CodeMirror-linenumbers", "syntax-errors"]
         });
 

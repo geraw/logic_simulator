@@ -63,9 +63,10 @@ if (window.appInitialized) {
         });
 
         // README display functions
-        async function showMainReadme() {
+    async function showMainReadme() {
             try {
-                const readmePath = `/webui/README.md`;
+        // Relative to webui/static -> go up one to webui/README.md
+        const readmePath = `../README.md`;
                 const r = await fetch(readmePath);
                 if (!r.ok) throw new Error(`Could not fetch main README`);
                 const readmeText = await r.text();
@@ -90,7 +91,8 @@ if (window.appInitialized) {
                 return;
             }
             try {
-                const readmePath = `/challenges/${challengeName}/README.md`;
+                // Relative to webui/static -> go up two to challenges/<name>/README.md
+                const readmePath = `../../challenges/${challengeName}/README.md`;
                 const r = await fetch(readmePath);
                 if (!r.ok) throw new Error(`Could not fetch README for ${challengeName}`);
                 const readmeText = await r.text();
@@ -119,7 +121,8 @@ if (window.appInitialized) {
         async function loadChallengeCode(challengeName) {
             if (!challengeName) return;
             try {
-                const path = `/challenges/${challengeName}/solution.cir`;
+                // Relative to webui/static -> go up two to challenges/<name>/solution.cir
+                const path = `../../challenges/${challengeName}/solution.cir`;
                 const response = await fetch(path);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const code = await response.text();
@@ -197,8 +200,9 @@ if (window.appInitialized) {
                 return await r.text();
             }
 
-            // Load project files relative to the server root
-            const rootPrefix = '/';
+            // Load project files relative to this page location
+            // From webui/static to repo root is ../../
+            const rootPrefix = '../../';
             const files = ['circuit_parser.py', 'simulator.py', 'grammar.lark', 'scoring_framework.py'];
             for (const f of files) {
                 let ok = false;

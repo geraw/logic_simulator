@@ -86,7 +86,7 @@ if (window.appInitialized) {
         // README display functions
     async function showMainReadme() {
             try {
-                const r = await fetchWithPagesFallback('README.md');
+                const r = await fetchWithPagesFallback('webui/README.md');
                 if (!r.ok) throw new Error(`Could not fetch main README`);
                 const readmeText = await r.text();
                 const converter = new showdown.Converter();

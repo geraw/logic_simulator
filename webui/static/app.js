@@ -63,7 +63,7 @@ if (window.appInitialized) {
         });
 
         // Resolve project-relative URLs robustly for GitHub Pages
-        const REPO_SLUG = 'AliceBobCasino';
+    const REPO_SLUG = 'logic_simulator';
         const origin = window.location.origin;
         const pathname = window.location.pathname;
         const idx = pathname.indexOf('/webui/static/');

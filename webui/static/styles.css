@@ -31,14 +31,17 @@ main {
   overflow: hidden; 
 }
 
-#code { display: none; }
+#code { 
+  display: none; 
+  overflow: hidden; 
+}
 
 .editor-section {
-  flex: 1 1 80%; /* Initial 80% height */
-  display: flex;
-  flex-direction: column;
-  min-height: 200px;
-  overflow: hidden;
+  flex: 1 1 900; /* Initial 80% height */
+  display: flex; 
+  flex-direction: column; 
+  /* min-height: 600px; */
+  overflow: auto; 
 }
 
 .CodeMirror { 

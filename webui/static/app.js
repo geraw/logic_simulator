@@ -35,9 +35,7 @@ if (window.appInitialized) {
         // Force CodeMirror to use container size, not content size
         editor.setSize(null, '100%');
         
-        // // Set CodeMirror to use container height
-        // editor.setSize(null, '100%');
-
+        
         // DOM element references
         const statusEl = document.getElementById('status');
         const logEl = document.getElementById('log');
@@ -323,20 +321,22 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             // Calculate position relative to container (body), accounting for header
             const header = document.querySelector('header');
             const headerHeight = header ? header.offsetHeight : 0;
+            const totalAvailableHeight = containerRect.height - headerHeight - resizer.offsetHeight - 60; // 60px for footer space
+            
             const newEditorHeight = clientY - containerRect.top - headerHeight;
+            const newOutputsHeight = totalAvailableHeight - newEditorHeight;
             
             const minEditorHeight = 150;
-            const minOutputsHeight = 100;
-            const maxEditorHeight = containerRect.height - headerHeight - minOutputsHeight - resizer.offsetHeight - 60; // 60px for footer space
+            const minOutputsHeight = 200;
 
-            if (newEditorHeight > minEditorHeight && newEditorHeight < maxEditorHeight) {
-                // Update editor section height directly
+            if (newEditorHeight > minEditorHeight && newOutputsHeight > minOutputsHeight) {
+                // Update editor section height
                 editorSection.style.height = newEditorHeight + 'px';
-                editorSection.style.flex = 'none'; // Ensure it doesn't use flex sizing
+                editorSection.style.flex = 'none';
                 
-                // Let outputs section fill remaining space
-                outputsSection.style.flex = '1';
-                outputsSection.style.height = 'auto';
+                // Update outputs section height
+                outputsSection.style.height = newOutputsHeight + 'px';
+                outputsSection.style.flex = 'none';
             }
         };
 
@@ -348,6 +348,29 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         };
 
         resizer.addEventListener('mousedown', startResize);
+
+        // Set initial resizer position to 80% from the top
+        const initializeLayout = () => {
+            const containerRect = container.getBoundingClientRect();
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 0;
+            const totalAvailableHeight = containerRect.height - headerHeight - resizer.offsetHeight - 60; // 60px for footer space
+            
+            // Set editor to 80% of available height
+            const editorHeight = totalAvailableHeight * 0.7;
+            const outputsHeight = totalAvailableHeight * 0.3;
+            
+            // Set the heights
+            editorSection.style.height = editorHeight + 'px';
+            editorSection.style.flex = 'none';
+            
+            // Give outputs section remaining 20%
+            outputsSection.style.height = outputsHeight + 'px';
+            outputsSection.style.flex = 'none';
+        };
+
+        // Initialize layout on page load
+        initializeLayout();
         resizer.addEventListener('touchstart', startResize, { passive: true });
 
 

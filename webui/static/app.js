@@ -9,20 +9,33 @@ if (window.appInitialized) {
 
         // Logic Simulator JavaScript Application
 
+        // NOTE: CodeMirror may show passive event listener warnings in the console.
+        // These are expected and normal for text editor functionality:
+        // - touchstart/touchmove: Required for proper touch text selection
+        // - mousewheel: Required for controlled scrolling within the editor
+        // These warnings can be safely ignored as they don't affect functionality or performance.
+
         // Inside the DOMContentLoaded listener...
         let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             lineNumbers: true,
             mode: 'circuitdsl',
-            // theme: 'material', 
-            gutters: ["CodeMirror-linenumbers", "syntax-errors"]
+            //theme: 'material', 
+            gutters: ["CodeMirror-linenumbers", "syntax-errors"],
+            //scrollbarStyle: "native", // Use native scrollbars
+            //viewportMargin: 20 // show ~20 lines, then scroll
+
         });
 
-        // Configure CodeMirror wrapper for proper flex layout
-        const editorWrapper = editor.getWrapperElement();
-        if (editorWrapper) {
-            editorWrapper.style.flex = '1'; // Make editor fill its container
-            editorWrapper.style.minHeight = '150px';
-        }
+        // Configure CodeMirror wrapper to respect container size and enable scrolling
+        // const editorWrapper = editor.getWrapperElement();
+        // if (editorWrapper) {
+        //     editorWrapper.style.height = '100%'; // Fill the container
+        //     editorWrapper.style.maxHeight = '100%'; // Don't grow beyond container
+        //     editorWrapper.style.overflow = 'auto'; // Enable scrolling
+        // }
+        
+        // // Set CodeMirror to use container height
+        // editor.setSize(null, '100%');
 
         // DOM element references
         const statusEl = document.getElementById('status');
@@ -292,7 +305,10 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         const main = document.querySelector('main');
 
         const startResize = (e) => {
-            e.preventDefault();
+            // CSS touch-action: none handles touch preventDefault, so we only need it for mouse
+            if (e.type === 'mousedown') {
+                e.preventDefault();
+            }
             window.addEventListener('mousemove', handleResize);
             window.addEventListener('touchmove', handleResize, { passive: false });
             window.addEventListener('mouseup', stopResize);
@@ -320,7 +336,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         };
 
         resizer.addEventListener('mousedown', startResize);
-        resizer.addEventListener('touchstart', startResize, { passive: false });
+        resizer.addEventListener('touchstart', startResize, { passive: true });
 
 
         // Error display
@@ -485,6 +501,13 @@ json.dumps(result)
         // Initialize application
         loadChallenges();
         showMainReadme();
+
+        // // Force CodeMirror to respect container size after initial layout
+        // setTimeout(() => {
+        //     if (editor && typeof editor.refresh === 'function') {
+        //         editor.refresh();
+        //     }
+        // }, 100);
 
     }); // End of DOMContentLoaded
 }

@@ -25,13 +25,13 @@ header {
   font-weight: 600;
 }
 
-main {
-  flex: 1;
+body {
+  font-family: system-ui, sans-serif;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   gap: 8px;
   padding: 8px 8px 60px;
-  overflow: hidden;
 }
 
 #code {
@@ -41,7 +41,7 @@ main {
 
 .editor-section {
   flex: none; /* Remove flex-grow behavior */
-  height: calc(80vh - 120px); /* 80% of viewport minus header, footer, and padding */
+  height: calc(80vh - 50px); /* 80% of viewport minus header, footer, and padding */
   display: flex;
   flex-direction: column;
   min-height: 200px;

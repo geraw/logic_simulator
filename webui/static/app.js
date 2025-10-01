@@ -303,7 +303,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         const resizer = document.getElementById('resizer');
         const editorSection = document.querySelector('.editor-section');
         const outputsSection = document.querySelector('.outputs-section');
-        const main = document.querySelector('main');
+        const container = document.body; // Use body as container since main was removed
 
         const startResize = (e) => {
             // CSS touch-action: none handles touch preventDefault, so we only need it for mouse
@@ -318,14 +318,25 @@ def simulate_inline(code:str, inputs:dict, steps:int):
 
         const handleResize = (e) => {
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const mainRect = main.getBoundingClientRect();
-            const newEditorHeight = clientY - mainRect.top;
+            const containerRect = container.getBoundingClientRect();
+            
+            // Calculate position relative to container (body), accounting for header
+            const header = document.querySelector('header');
+            const headerHeight = header ? header.offsetHeight : 0;
+            const newEditorHeight = clientY - containerRect.top - headerHeight;
+            
             const minEditorHeight = 150;
             const minOutputsHeight = 100;
+            const maxEditorHeight = containerRect.height - headerHeight - minOutputsHeight - resizer.offsetHeight - 60; // 60px for footer space
 
-            if (newEditorHeight > minEditorHeight && newEditorHeight < (mainRect.height - minOutputsHeight)) {
-                editorSection.style.flexBasis = newEditorHeight + 'px';
-                outputsSection.style.flexBasis = (mainRect.height - newEditorHeight - resizer.offsetHeight) + 'px';
+            if (newEditorHeight > minEditorHeight && newEditorHeight < maxEditorHeight) {
+                // Update editor section height directly
+                editorSection.style.height = newEditorHeight + 'px';
+                editorSection.style.flex = 'none'; // Ensure it doesn't use flex sizing
+                
+                // Let outputs section fill remaining space
+                outputsSection.style.flex = '1';
+                outputsSection.style.height = 'auto';
             }
         };
 

@@ -53,27 +53,22 @@ main {
 }
 
 .editor-section {
-  /* flex: 4 0 4; */
-  /* 80% of space, no shrink, zero basis - content won't affect size */
+  flex: 4 0 0; /* 80% of space, no shrink, zero basis - content won't affect size */
   display: flex;
   flex-direction: column;
-  height: 100%;
-  /* overflow: hidden; */
+  min-height: 200px;
+  overflow: hidden;
 }
 
 .CodeMirror {
   flex: 1;
-  height: 100%;
-  /* Force CodeMirror to fill container height */
-  min-height: 0;
-  /* Allow it to shrink below content size */
-  max-height: 100%;
-  /* Prevent it from growing beyond container */
+  height: 100%; /* Force CodeMirror to fill container height */
+  min-height: 0; /* Allow it to shrink below content size */
+  max-height: 100%; /* Prevent it from growing beyond container */
   border: 1px solid #ddd;
   border-radius: 4px;
   overflow: auto;
-  touch-action: manipulation;
-  /* Allow CodeMirror to handle its own touch events */
+  touch-action: manipulation; /* Allow CodeMirror to handle its own touch events */
 }
 
 .panel {

@@ -21,18 +21,19 @@ if (window.appInitialized) {
             mode: 'circuitdsl',
             //theme: 'material', 
             gutters: ["CodeMirror-linenumbers", "syntax-errors"],
-            //scrollbarStyle: "native", // Use native scrollbars
-            //viewportMargin: 20 // show ~20 lines, then scroll
-
+            scrollbarStyle: "native", // Use native scrollbars
+            viewportMargin: 10 // Only render ~10 lines outside viewport, then scroll
         });
 
         // Configure CodeMirror wrapper to respect container size and enable scrolling
-        // const editorWrapper = editor.getWrapperElement();
-        // if (editorWrapper) {
-        //     editorWrapper.style.height = '100%'; // Fill the container
-        //     editorWrapper.style.maxHeight = '100%'; // Don't grow beyond container
-        //     editorWrapper.style.overflow = 'auto'; // Enable scrolling
-        // }
+        const editorWrapper = editor.getWrapperElement();
+        if (editorWrapper) {
+            editorWrapper.style.height = '100%'; // Fill the container
+            editorWrapper.style.maxHeight = '100%'; // Don't grow beyond container
+        }
+        
+        // Force CodeMirror to use container size, not content size
+        editor.setSize(null, '100%');
         
         // // Set CodeMirror to use container height
         // editor.setSize(null, '100%');
@@ -502,12 +503,12 @@ json.dumps(result)
         loadChallenges();
         showMainReadme();
 
-        // // Force CodeMirror to respect container size after initial layout
-        // setTimeout(() => {
-        //     if (editor && typeof editor.refresh === 'function') {
-        //         editor.refresh();
-        //     }
-        // }, 100);
+        // Force CodeMirror to respect container size after initial layout
+        setTimeout(() => {
+            if (editor && typeof editor.refresh === 'function') {
+                editor.refresh();
+            }
+        }, 100);
 
     }); // End of DOMContentLoaded
 }

@@ -1,6 +1,6 @@
 # Palindrome Detector Challenge
 
-## The Challenge
+## Description of the Challenge
 Design a logic circuit that detects if a 6-bit input sequence X is a palindrome (reads the same forwards and backwards).
 
 ## Input/Output Specification

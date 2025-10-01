@@ -11,10 +11,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/mode/simple.min.js"></script>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/showdown/2.1.0/showdown.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
   <script src="circuit_mode.js"></script>
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -77,7 +80,7 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
   <div id="readmeModal" class="modal" style="display:none;">
     <div class="modal-content">
       <button class="modal-close" onclick="document.getElementById('readmeModal').style.display='none'">&times;</button>
-      <div id="readmeContent" style="white-space: pre-wrap;"></div>
+      <div id="readmeContent"></div>
     </div>
   </div>
   

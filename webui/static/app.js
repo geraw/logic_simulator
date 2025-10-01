@@ -96,14 +96,165 @@ if (window.appInitialized) {
         }
 
         // README display functions
-    async function showMainReadme() {
+        function createMarkdownConverter() {
+            const converter = new showdown.Converter({
+                tables: true,
+                strikethrough: true,
+                tasklists: true,
+                ghCodeBlocks: true,
+                ghMentions: false,
+                ghMentionsLink: false,
+                emoji: true,
+                underline: true,
+                completeHTMLDocument: false,
+                metadata: false,
+                splitAdjacentBlockquotes: true,
+                smoothLivePreview: true,
+                smartIndentationFix: true,
+                disableForced4SpacesIndentedSublists: true,
+                simpleLineBreaks: true,
+                requireSpaceBeforeHeadingText: true,
+                encodeEmails: false,
+                openLinksInNewWindow: true,
+                backslashEscapesHTMLTags: true,
+                literalMidWordUnderscores: true,
+                parseImgDimensions: true
+            });
+            
+            // Add custom extensions for better circuit language support
+            converter.addExtension({
+                type: 'lang',
+                filter: function(text) {
+                    // Better handling of circuit syntax in code blocks
+                    return text.replace(/```cir\n([\s\S]*?)```/g, function(match, code) {
+                        return '```circuit\n' + code + '```';
+                    });
+                }
+            });
+            
+            return converter;
+        }
+
+        function renderMathInElement(element) {
+            if (typeof renderMathInElement !== 'undefined' && window.katex) {
+                try {
+                    window.renderMathInElement(element, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\[', right: '\\]', display: true},
+                            {left: '\\(', right: '\\)', display: false}
+                        ],
+                        throwOnError: false,
+                        errorColor: '#cc0000',
+                        strict: false
+                    });
+                } catch (e) {
+                    console.warn('KaTeX rendering failed:', e);
+                }
+            }
+        }
+
+        function enhanceCodeBlocks(element) {
+            // Add copy buttons to code blocks
+            const codeBlocks = element.querySelectorAll('pre code');
+            codeBlocks.forEach(codeBlock => {
+                const pre = codeBlock.parentElement;
+                if (pre && !pre.querySelector('.copy-button')) {
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.textContent = 'Copy';
+                    copyButton.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(codeBlock.textContent);
+                            copyButton.textContent = 'Copied!';
+                            copyButton.classList.add('copied');
+                            setTimeout(() => {
+                                copyButton.textContent = 'Copy';
+                                copyButton.classList.remove('copied');
+                            }, 2000);
+                        } catch (err) {
+                            // Fallback for browsers that don't support clipboard API
+                            const textArea = document.createElement('textarea');
+                            textArea.value = codeBlock.textContent;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            copyButton.textContent = 'Copied!';
+                            copyButton.classList.add('copied');
+                            setTimeout(() => {
+                                copyButton.textContent = 'Copy';
+                                copyButton.classList.remove('copied');
+                            }, 2000);
+                        }
+                    });
+                    pre.appendChild(copyButton);
+                }
+            });
+
+            // Smooth scroll for internal links
+            const links = element.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetElement = element.querySelector(`#${targetId}`);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+
+            // Auto-generate IDs for headings if they don't have them
+            const headings = element.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            headings.forEach(heading => {
+                if (!heading.id) {
+                    const id = heading.textContent
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s-]/g, '')
+                        .replace(/\s+/g, '-')
+                        .replace(/-+/g, '-')
+                        .replace(/^-|-$/g, '');
+                    if (id) {
+                        heading.id = id;
+                    }
+                }
+            });
+
+            // Improve table responsiveness
+            const tables = element.querySelectorAll('table');
+            tables.forEach(table => {
+                if (!table.parentElement.classList.contains('table-wrapper')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-wrapper';
+                    wrapper.style.overflowX = 'auto';
+                    wrapper.style.marginBottom = '16px';
+                    table.parentElement.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+            });
+        }
+
+        async function showMainReadme() {
             try {
                 const r = await fetchWithPagesFallback('webui/README.md');
                 if (!r.ok) throw new Error(`Could not fetch main README`);
                 const readmeText = await r.text();
-                const converter = new showdown.Converter();
+                const converter = createMarkdownConverter();
                 const html = converter.makeHtml(readmeText);
-                document.getElementById('readmeContent').innerHTML = html;
+                const readmeContentEl = document.getElementById('readmeContent');
+                readmeContentEl.innerHTML = html;
+                
+                // Enhance the content with interactive features
+                setTimeout(() => {
+                    renderMathInElement(readmeContentEl);
+                    enhanceCodeBlocks(readmeContentEl);
+                }, 100);
+                
                 readmeModal.style.display = 'flex';
             } catch (e) {
                 log('Error showing main README: ' + e.message);
@@ -125,9 +276,17 @@ if (window.appInitialized) {
                 const r = await fetchWithPagesFallback(`challenges/${challengeName}/README.md`);
                 if (!r.ok) throw new Error(`Could not fetch README for ${challengeName}`);
                 const readmeText = await r.text();
-                const converter = new showdown.Converter();
+                const converter = createMarkdownConverter();
                 const html = converter.makeHtml(readmeText);
-                document.getElementById('readmeContent').innerHTML = html;
+                const readmeContentEl = document.getElementById('readmeContent');
+                readmeContentEl.innerHTML = html;
+                
+                // Enhance the content with interactive features
+                setTimeout(() => {
+                    renderMathInElement(readmeContentEl);
+                    enhanceCodeBlocks(readmeContentEl);
+                }, 100);
+
                 readmeModal.style.display = 'flex';
 
                 // Update internal state and UI to reflect the selection

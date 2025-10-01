@@ -1,20 +1,7 @@
 /* Logic Simulator Styles */
 
-/* * {
+* {
   box-sizing: border-box;
-} */
-
-.CodeMirror {
-  flex: 3;
-  height: 100%;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  overflow: auto;
-  touch-action: manipulation;
-  /* Allow CodeMirror to handle its own touch events */
-}
-
-box;
 }
 
 html,
@@ -53,7 +40,8 @@ main {
 }
 
 .editor-section {
-  flex: 4 0 0; /* 80% of space, no shrink, zero basis - content won't affect size */
+  flex: none; /* Remove flex-grow behavior */
+  height: calc(80vh - 120px); /* 80% of viewport minus header, footer, and padding */
   display: flex;
   flex-direction: column;
   min-height: 200px;
@@ -107,8 +95,7 @@ main {
 }
 
 .outputs-section {
-  flex: 1 0 1;
-  /* 20% relative to editor (1:4 ratio), no shrink, zero basis */
+  flex: 1; /* Fill remaining space after editor takes 80% */
   min-height: 100px;
   display: flex;
   flex-direction: column;

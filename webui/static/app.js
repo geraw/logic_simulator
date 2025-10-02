@@ -19,10 +19,10 @@ if (window.appInitialized) {
         let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             lineNumbers: true,
             mode: 'circuitdsl',
-            //theme: 'material', 
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'material' : 'default',
             gutters: ["CodeMirror-linenumbers", "syntax-errors"],
-            scrollbarStyle: "native", // Use native scrollbars
-            viewportMargin: 10 // Only render ~10 lines outside viewport, then scroll
+            //scrollbarStyle: "native", // Use native scrollbars
+            //viewportMargin: 10 // Only render ~10 lines outside viewport, then scroll
         });
 
         // Configure CodeMirror wrapper to respect container size and enable scrolling
@@ -37,13 +37,74 @@ if (window.appInitialized) {
         
         
         // DOM element references
-        const statusEl = document.getElementById('status');
         const logEl = document.getElementById('log');
         const challengeSelect = document.getElementById('challengeSelect');
         const challengesPanel = document.getElementById('challengesPanel');
         const logModal = document.getElementById('logModal');
         const scoreModal = document.getElementById('scoreModal');
         const readmeModal = document.getElementById('readmeModal');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Theme management
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeIcon(savedTheme);
+            } else if (systemPrefersDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                updateThemeIcon('dark');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                updateThemeIcon('light');
+            }
+        }
+
+        function updateThemeIcon(theme) {
+            const themeIcon = document.querySelector('.theme-icon');
+            if (themeIcon) {
+                themeIcon.textContent = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+            
+            // Update CodeMirror theme
+            if (editor) {
+                const cmTheme = newTheme === 'dark' ? 'material' : 'default';
+                editor.setOption('theme', cmTheme);
+            }
+        }
+
+        // Initialize theme
+        initializeTheme();
+
+        // Theme toggle event listener
+        if (themeToggle) {
+            themeToggle.addEventListener('click', toggleTheme);
+        }
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                const newTheme = e.matches ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                updateThemeIcon(newTheme);
+                
+                if (editor) {
+                    const cmTheme = newTheme === 'dark' ? 'material' : 'default';
+                    editor.setOption('theme', cmTheme);
+                }
+            }
+        });
 
         // Global keyboard shortcuts
         window.addEventListener('keydown', (e) => {
@@ -371,14 +432,14 @@ if (window.appInitialized) {
 
         // Pyodide initialization
         let pyodideReadyPromise = (async () => {
-            statusEl.textContent = 'Loading Pyodide...';
+            log('Loading Pyodide...');
             const pyodide = await loadPyodide({
                 indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.1/full/'
             });
-            statusEl.textContent = 'Installing lark via micropip...';
+            log('Installing lark via micropip...');
             await pyodide.loadPackage('micropip');
             await pyodide.runPythonAsync(`import micropip; await micropip.install('lark-parser')`);
-            statusEl.textContent = 'Fetching project sources...';
+            log('Fetching project sources...');
 
             async function fetchText(path) {
                 const r = await fetch(path);
@@ -485,8 +546,8 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             const newEditorHeight = clientY - containerRect.top - headerHeight;
             const newOutputsHeight = totalAvailableHeight - newEditorHeight;
             
-            const minEditorHeight = 150;
-            const minOutputsHeight = 200;
+            const minEditorHeight = 50;
+            const minOutputsHeight = 50;
 
             if (newEditorHeight > minEditorHeight && newOutputsHeight > minOutputsHeight) {
                 // Update editor section height
@@ -514,16 +575,14 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             const header = document.querySelector('header');
             const headerHeight = header ? header.offsetHeight : 0;
             const totalAvailableHeight = containerRect.height - headerHeight - resizer.offsetHeight - 60; // 60px for footer space
+
+            // Set editor to 80% and outputs to 20%
+            const editorHeight = totalAvailableHeight * 0.8;
+            const outputsHeight = totalAvailableHeight * 0.2;
             
-            // Set editor to 80% of available height
-            const editorHeight = totalAvailableHeight * 0.7;
-            const outputsHeight = totalAvailableHeight * 0.3;
-            
-            // Set the heights
             editorSection.style.height = editorHeight + 'px';
             editorSection.style.flex = 'none';
             
-            // Give outputs section remaining 20%
             outputsSection.style.height = outputsHeight + 'px';
             outputsSection.style.flex = 'none';
         };
@@ -537,7 +596,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         function showError(message) {
             document.getElementById('errormsg').innerHTML = message;
             document.getElementById('errorModal').style.display = 'flex';
-            statusEl.textContent = 'Input validation error';
+            log('Input validation error');
         }
 
         // Input validation
@@ -578,7 +637,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             if (!validateInputFormat(inputStr)) {
                 return;
             }
-            statusEl.textContent = 'Simulating...';
+            log('Simulating...');
             const code = editor.getValue();
             const steps = parseInt(document.getElementById('steps').value, 10) || 8;
             const inputs = {};
@@ -608,7 +667,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                     d.textContent = k + ': ' + v;
                     outDiv.appendChild(d);
                 });
-                statusEl.textContent = 'Done';
+                log('Simulation complete');
             } catch (e) {
                 const fullMsg = (e && e.message) ? String(e.message) : String(e);
                 let friendly = fullMsg;
@@ -626,7 +685,6 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 document.getElementById('errorModal').style.display = 'flex';
                 // Keep full message in log for debugging
                 log('Error: ' + fullMsg);
-                statusEl.textContent = 'Error';
             }
         }
 
@@ -639,7 +697,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 return;
             }
             const pyodide = await pyodideReadyPromise;
-            statusEl.textContent = 'Scoring...';
+            log('Scoring challenge...');
             try {
                 const scorePath = `../../challenges/${challenge}/score.py`;
                 const r = await fetch(scorePath);
@@ -680,10 +738,9 @@ json.dumps(result)
 
                 document.getElementById('scoreresult').innerHTML = resultHtml;
                 scoreModal.style.display = 'flex';
-                statusEl.textContent = 'Score complete';
+                log('Scoring complete');
             } catch (e) {
                 log('Score error: ' + e);
-                statusEl.textContent = 'Score error';
                 document.getElementById('scoreresult').innerHTML = `<span style="color:red">An error occurred during scoring. See console log.</span>`;
                 scoreModal.style.display = 'flex';
             }

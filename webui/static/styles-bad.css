@@ -1,0 +1,817 @@
+/* =================================================================
+   LOGIC SIMULATOR - ORGANIZED STYLESHEET
+   ================================================================= */
+
+/* =================================================================
+   CSS VARIABLES FOR THEME MANAGEMENT
+   ================================================================= */
+
+:root {
+    /* Base Layout & Text Colors - Light Theme */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --status-text: #555;
+    
+    /* Border & Shadow Colors - Light Theme */
+    --border-color: #ddd;
+    --border-color-dark: #ccc;
+    --border-color-light: #bbb;
+    
+    /* Header & Navigation - Light Theme */
+    --header-bg: #222;
+    --header-text: #ffffff;
+    
+    /* Buttons - Light Theme */
+    --button-bg: #e0e0e0;
+    --button-border: #bbb;
+    --button-active-bg: #cce5ff;
+    --button-active-border: #007bff;
+    
+    /* Layout Components - Light Theme */
+    --footer-bg: #f0f0f0;
+    --footer-border: #ccc;
+    --modal-bg: rgba(0, 0, 0, 0.25);
+    --modal-content-bg: #ffffff;
+    --editor-border: #ddd;
+    --resizer-bg: #ddd;
+    --resizer-hover: #ccc;
+    --resizer-handle: #999;
+    --outputs-bg: #f5f5f5;
+    
+    /* Code & Syntax - Light Theme */
+    --code-bg: #f1f5c8;
+    --code-text: rgb(46, 35, 9);
+    
+    /* Markdown Content - Light Theme */
+    --md-border: #d1d9e0;
+    --md-blockquote-text: #656d76;
+    --md-code-bg: #f6f8fa;
+    --md-code-text: #1f2328;
+    --md-table-header-bg: #f6f8fa;
+    --md-table-border: #d1d9e0;
+    --md-table-row-even: #f6f8fa;
+    --md-link: #0969da;
+    --md-link-visited: #8250df;
+    --md-hr: #d1d9e0;
+}
+
+/* Dark Theme Variables */
+[data-theme="dark"] {
+    /* Base Layout & Text Colors - Dark Theme */
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #21262d;
+    --text-primary: #f0f6fc;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --status-text: #8b949e;
+    
+    /* Border & Shadow Colors - Dark Theme */
+    --border-color: #30363d;
+    --border-color-dark: #21262d;
+    --border-color-light: #373e47;
+    
+    /* Header & Navigation - Dark Theme */
+    --header-bg: #010409;
+    --header-text: #f0f6fc;
+    
+    /* Buttons - Dark Theme */
+    --button-bg: #21262d;
+    --button-border: #30363d;
+    --button-active-bg: #1f6feb;
+    --button-active-border: #388bfd;
+    
+    /* Layout Components - Dark Theme */
+    --footer-bg: #161b22;
+    --footer-border: #30363d;
+    --modal-bg: rgba(1, 4, 9, 0.8);
+    --modal-content-bg: #161b22;
+    --editor-border: #30363d;
+    --resizer-bg: #30363d;
+    --resizer-hover: #373e47;
+    --resizer-handle: #6e7681;
+    --outputs-bg: #161b22;
+    
+    /* Code & Syntax - Dark Theme */
+    --code-bg: #161b22;
+    --code-text: #e6edf3;
+    
+    /* Markdown Content - Dark Theme */
+    --md-border: #30363d;
+    --md-blockquote-text: #8b949e;
+    --md-code-bg: #161b22;
+    --md-code-text: #e6edf3;
+    --md-table-header-bg: #161b22;
+    --md-table-border: #30363d;
+    --md-table-row-even: #161b22;
+    --md-link: #58a6ff;
+    --md-link-visited: #bc8cff;
+    --md-hr: #30363d;
+}
+
+/* =================================================================
+   THEME TRANSITION ANIMATIONS
+   ================================================================= */
+
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* =================================================================
+   BASE STYLES & RESET
+   ================================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* =================================================================
+   LAYOUT STRUCTURE
+   ================================================================= */
+
+/* Header */
+.header {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    padding: 1rem;
+    box-shadow: 0 2px 4px var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    z-index: 1000;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+/* Theme Toggle Button */
+#theme-toggle {
+    background: none;
+    border: 1px solid var(--header-text);
+    color: var(--header-text);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+#theme-toggle:hover {
+    background-color: var(--header-text);
+    color: var(--header-bg);
+}
+
+/* Main Container */
+.container {
+    display: flex;
+    height: calc(100vh - 80px);
+    background-color: var(--bg-primary);
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    transition: width 0.3s ease;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Content Area */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+}
+
+/* Editor Section */
+.editor-section {
+    flex: 1;
+    display: flex;
+    background-color: var(--bg-primary);
+}
+
+.editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--editor-border);
+    background-color: var(--bg-primary);
+}
+
+.editor-header {
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 500;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Output Panel */
+.output-panel {
+    width: 400px;
+    background-color: var(--outputs-bg);
+    border-left: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.output-header {
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.output-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    color: var(--status-text);
+    background-color: var(--outputs-bg);
+}
+
+/* Footer */
+.footer {
+    background-color: var(--footer-bg);
+    border-top: 1px solid var(--footer-border);
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 50px;
+}
+
+.status {
+    color: var(--status-text);
+    font-size: 0.9rem;
+}
+
+/* =================================================================
+   BUTTONS & FORM CONTROLS
+   ================================================================= */
+
+/* Button Base Styles */
+button, .btn {
+    background-color: var(--button-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--button-border);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+button:hover, .btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-dark);
+}
+
+button:active, .btn:active {
+    background-color: var(--button-active-bg);
+    border-color: var(--button-active-border);
+}
+
+button:disabled, .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Primary Button Variant */
+.btn-primary {
+    background-color: var(--button-active-bg);
+    border-color: var(--button-active-border);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+/* Success Button Variant */
+.btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+/* Danger Button Variant */
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* Input Fields */
+input[type="text"], input[type="number"], textarea, select {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+input[type="text"]:focus, input[type="number"]:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--button-active-border);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* =================================================================
+   FILE TREE & NAVIGATION
+   ================================================================= */
+
+.file-tree {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.file-tree li {
+    margin: 0;
+    padding: 0;
+}
+
+.file-tree .file-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: background-color 0.2s ease;
+}
+
+.file-tree .file-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.file-tree .file-item.selected {
+    background-color: var(--button-active-bg);
+    color: white;
+}
+
+.file-tree .folder {
+    font-weight: 500;
+}
+
+.file-tree .folder::before {
+    content: "📁 ";
+    margin-right: 0.5rem;
+}
+
+.file-tree .file::before {
+    content: "📄 ";
+    margin-right: 0.5rem;
+}
+
+/* =================================================================
+   MODAL DIALOGS
+   ================================================================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--modal-bg);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: block;
+}
+
+.modal-content {
+    background-color: var(--modal-content-bg);
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.close {
+    color: var(--text-muted);
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+/* =================================================================
+   MARKDOWN CONTENT STYLING
+   ================================================================= */
+
+.markdown-content {
+    color: var(--text-primary);
+    line-height: 1.6;
+    max-width: none;
+}
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content h4,
+.markdown-content h5,
+.markdown-content h6 {
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.markdown-content h1 { font-size: 2rem; border-bottom: 1px solid var(--md-border); padding-bottom: 0.5rem; }
+.markdown-content h2 { font-size: 1.5rem; border-bottom: 1px solid var(--md-border); padding-bottom: 0.3rem; }
+.markdown-content h3 { font-size: 1.25rem; }
+.markdown-content h4 { font-size: 1.1rem; }
+.markdown-content h5 { font-size: 1rem; }
+.markdown-content h6 { font-size: 0.9rem; color: var(--text-secondary); }
+
+.markdown-content p {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.markdown-content a {
+    color: var(--md-link);
+    text-decoration: none;
+}
+
+.markdown-content a:hover {
+    text-decoration: underline;
+}
+
+.markdown-content a:visited {
+    color: var(--md-link-visited);
+}
+
+/* Lists */
+.markdown-content ul,
+.markdown-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.markdown-content li {
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+/* Blockquotes */
+.markdown-content blockquote {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--md-border);
+    background-color: var(--bg-secondary);
+    color: var(--md-blockquote-text);
+    font-style: italic;
+}
+
+.markdown-content blockquote p {
+    margin: 0;
+}
+
+/* Horizontal Rules */
+.markdown-content hr {
+    border: none;
+    height: 1px;
+    background-color: var(--md-hr);
+    margin: 2rem 0;
+}
+
+/* Code Blocks */
+.markdown-content pre {
+    background-color: var(--md-code-bg);
+    border: 1px solid var(--md-border);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+    position: relative;
+}
+
+.markdown-content code {
+    background-color: var(--md-code-bg);
+    color: var(--md-code-text);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.9em;
+}
+
+.markdown-content pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    color: var(--md-code-text);
+}
+
+/* Code Block Copy Button */
+.code-block-container {
+    position: relative;
+}
+
+.copy-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.copy-button:hover {
+    opacity: 1;
+    background: var(--bg-tertiary);
+}
+
+.copy-button.copied {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+/* Tables */
+.markdown-content table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    background-color: var(--bg-primary);
+}
+
+.markdown-content th,
+.markdown-content td {
+    border: 1px solid var(--md-table-border);
+    padding: 0.75rem;
+    text-align: left;
+    color: var(--text-primary);
+}
+
+.markdown-content th {
+    background-color: var(--md-table-header-bg);
+    font-weight: 600;
+}
+
+.markdown-content tr:nth-child(even) {
+    background-color: var(--md-table-row-even);
+}
+
+/* Math Expressions */
+.katex {
+    color: var(--text-primary) !important;
+}
+
+.katex-display {
+    margin: 1rem 0 !important;
+}
+
+/* =================================================================
+   CODEMIRROR EDITOR OVERRIDES
+   ================================================================= */
+
+.CodeMirror {
+    height: 100%;
+    background-color: var(--code-bg) !important;
+    color: var(--code-text) !important;
+    border: none;
+    font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.CodeMirror-gutters {
+    background-color: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+.CodeMirror-linenumber {
+    color: var(--text-muted) !important;
+    padding: 0 8px 0 0 !important;
+}
+
+.CodeMirror-cursor {
+    border-left: 1px solid var(--text-primary) !important;
+}
+
+.CodeMirror-selected {
+    background-color: var(--button-active-bg) !important;
+}
+
+.CodeMirror-line::selection,
+.CodeMirror-line > span::selection,
+.CodeMirror-line > span > span::selection {
+    background-color: var(--button-active-bg) !important;
+}
+
+/* =================================================================
+   RESPONSIVE DESIGN
+   ================================================================= */
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: 200px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .editor-section {
+        flex-direction: column;
+    }
+    
+    .output-panel {
+        width: 100%;
+        height: 300px;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 2% auto;
+        padding: 1rem;
+    }
+    
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+/* =================================================================
+   ANIMATION KEYFRAMES
+   ================================================================= */
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+    from { 
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to { 
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes bounceIn {
+    0% { 
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% { 
+        transform: scale(1.05);
+    }
+    70% { 
+        transform: scale(0.9);
+    }
+    100% { 
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* =================================================================
+   UTILITY CLASSES
+   ================================================================= */
+
+.hidden { display: none !important; }
+.visible { display: block !important; }
+.flex { display: flex !important; }
+.flex-column { flex-direction: column !important; }
+.flex-center { justify-content: center !important; align-items: center !important; }
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+.font-bold { font-weight: bold !important; }
+.font-normal { font-weight: normal !important; }
+.mt-1 { margin-top: 0.5rem !important; }
+.mt-2 { margin-top: 1rem !important; }
+.mb-1 { margin-bottom: 0.5rem !important; }
+.mb-2 { margin-bottom: 1rem !important; }
+.p-1 { padding: 0.5rem !important; }
+.p-2 { padding: 1rem !important; }
+
+/* =================================================================
+   PRINT STYLES
+   ================================================================= */
+
+@media print {
+    .header, .sidebar, .footer, .output-panel, #theme-toggle {
+        display: none !important;
+    }
+    
+    .container {
+        height: auto !important;
+        display: block !important;
+    }
+    
+    .content {
+        width: 100% !important;
+    }
+    
+    .modal {
+        display: none !important;
+    }
+    
+    body {
+        background: white !important;
+        color: black !important;
+    }
+}

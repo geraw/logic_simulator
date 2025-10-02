@@ -23,7 +23,12 @@
 
 <body>
   <header>
-    Logic Simulator - <a href="#" id="mainReadmeBtn" style="color: #aaddff; text-decoration: none;">View Project README</a>
+    <div>
+      Logic Simulator - <a href="#" id="mainReadmeBtn" style="color: #aaddff; text-decoration: none;">View Project README</a>
+    </div>
+    <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
+      <span class="theme-icon">🌙</span>
+    </button>
   </header>
   
   <div class="editor-section">
@@ -90,7 +95,6 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
     </div>
     <div id="footerControls">
       <button id="logMenuBtn">Show Log</button>
-      <span id="status"></span>
     </div>
   </footer>
 

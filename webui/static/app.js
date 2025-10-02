@@ -7,9 +7,15 @@ if (window.appInitialized) {
     // Wait for the DOM to be fully loaded before executing the script
     document.addEventListener('DOMContentLoaded', function () {
 
-        // Logic Simulator JavaScript Application
+    // Logic Simulator JavaScript Application
 
-        // NOTE: CodeMirror may show passive event listener warnings in the console.
+    // Apply persisted or system theme before initializing UI components
+    const savedThemePref = localStorage.getItem('theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedThemePref ? savedThemePref : (systemPrefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', initialTheme);
+
+    // NOTE: CodeMirror may show passive event listener warnings in the console.
         // These are expected and normal for text editor functionality:
         // - touchstart/touchmove: Required for proper touch text selection
         // - mousewheel: Required for controlled scrolling within the editor
@@ -59,6 +65,12 @@ if (window.appInitialized) {
             } else {
                 document.documentElement.setAttribute('data-theme', 'light');
                 updateThemeIcon('light');
+            }
+
+            if (editor) {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const cmTheme = currentTheme === 'dark' ? 'material' : 'default';
+                editor.setOption('theme', cmTheme);
             }
         }
 
@@ -128,6 +140,43 @@ if (window.appInitialized) {
         function log(msg) {
             logEl.textContent += msg + "\n";
             logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function extractPythonErrorMessage(fullMsg, fallbackLabel = 'Error') {
+            if (!fullMsg) return fallbackLabel;
+            const lines = fullMsg.split('\n');
+            let startIdx = -1;
+
+            for (let i = lines.length - 1; i >= 0; i--) {
+                const line = lines[i];
+                const trimmed = line.trim();
+                if (!trimmed) continue;
+                if (trimmed.startsWith('Traceback')) continue;
+                if (trimmed.startsWith('File "')) continue;
+                if (trimmed.startsWith('During handling of the above exception')) continue;
+                startIdx = i;
+                break;
+            }
+
+            if (startIdx === -1) startIdx = lines.length - 1;
+
+            const messageLines = [];
+            const firstLine = lines[startIdx] ?? '';
+            const colonIdx = firstLine.indexOf(':');
+            if (colonIdx >= 0 && colonIdx < firstLine.length - 1) {
+                messageLines.push(firstLine.slice(colonIdx + 1).trim());
+            } else if (firstLine.trim().length > 0) {
+                messageLines.push(firstLine.trim());
+            }
+
+            for (let j = startIdx + 1; j < lines.length; j++) {
+                const raw = lines[j].replace(/\t/g, '    ').replace(/\r/g, '');
+                if (raw.trim().length === 0) continue;
+                messageLines.push(raw.replace(/\s+$/g, ''));
+            }
+
+            const joined = messageLines.filter(Boolean).join('\n').trim();
+            return joined || fullMsg.trim() || fallbackLabel;
         }
 
         // Log modal functionality
@@ -470,13 +519,16 @@ from circuit_parser import parse_file
 from simulator import Simulator
 
 def simulate_inline(code:str, inputs:dict, steps:int):
-  with open('_inline.cir','w') as f:
-    f.write(code)
-  circuit = parse_file('_inline.cir')
-  sim = Simulator(circuit)
-  outputs = sim.run(inputs, steps)
-  result = {'outputs': outputs, 'history': sim.history}
-  return json.dumps(result)
+    try:
+        with open('_inline.cir','w') as f:
+            f.write(code)
+        circuit = parse_file('_inline.cir')
+        sim = Simulator(circuit)
+        outputs = sim.run(inputs, steps)
+        result = {'outputs': outputs, 'history': sim.history}
+        return json.dumps(result)
+    except Exception as exc:
+        raise RuntimeError(str(exc))
 `);
 
             return pyodide;
@@ -669,19 +721,17 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 });
                 log('Simulation complete');
             } catch (e) {
-                const fullMsg = (e && e.message) ? String(e.message) : String(e);
-                let friendly = fullMsg;
-                if (fullMsg.includes('Traceback')) {
-                    // Take the last non-empty line as the exception summary
-                    const lines = fullMsg.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                    const last = lines[lines.length - 1] || fullMsg;
-                    // Optionally strip the exception type prefix (e.g., "RuntimeError:")
-                    const idx = last.indexOf(':');
-                    friendly = (idx >= 0) ? last.slice(idx + 1).trim() : last;
-                }
-                // Escape HTML and render just the concise message
-                const safe = friendly.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                document.getElementById('errormsg').innerHTML = `<div style='font-family:monospace; white-space:pre;'>${safe}</div>`;
+                const rawMsg = (e && typeof e.message === 'string') ? e.message : String(e);
+                const fullMsg = rawMsg || 'Unknown error';
+                const summary = extractPythonErrorMessage(fullMsg, 'Simulation error');
+                const safeSummary = summary
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
+                document.getElementById('errormsg').innerHTML = `
+                    <div class="error-message">${safeSummary}</div>
+                `;
                 document.getElementById('errorModal').style.display = 'flex';
                 // Keep full message in log for debugging
                 log('Error: ' + fullMsg);
@@ -710,20 +760,27 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 const py = `
 import importlib.util, sys, io
 from contextlib import redirect_stdout
-
-spec = importlib.util.spec_from_file_location('score_tmp','score_tmp.py')
-mod = importlib.util.module_from_spec(spec)
-sys.modules['score_tmp'] = mod
-spec.loader.exec_module(mod)
 import json
 
-result = {'passed': False, 'error': 'verify_circuit() missing'}
-output_log = io.StringIO()
-if hasattr(mod, 'verify_circuit'):
+try:
+    spec = importlib.util.spec_from_file_location('score_tmp','score_tmp.py')
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules['score_tmp'] = mod
+    spec.loader.exec_module(mod)
+
+    output_log = io.StringIO()
+    if not hasattr(mod, 'verify_circuit'):
+        raise RuntimeError('verify_circuit() missing in score.py')
+
     with redirect_stdout(output_log):
         ok = mod.verify_circuit('_web_submission.cir')
+
     result = {'passed': ok, 'log': output_log.getvalue()}
-json.dumps(result)
+    json.dumps(result)
+except Exception as exc:
+    #raise RuntimeError(str(exc))
+    #print(str(exc))
+    print("????!!!!???")
 `;
                 const jsonRes = await pyodide.runPythonAsync(py);
                 const jsRes = JSON.parse(jsonRes);
@@ -733,15 +790,25 @@ json.dumps(result)
                     '<span style="color:orange; font-weight:bold;">Tests failed ✖</span>';
 
                 if (jsRes.log) {
-                    resultHtml += `<pre style="background:#eee; border:1px solid #ccc; padding:8px; margin-top:12px; text-align:left;">${jsRes.log.replace(/</g, '&lt;')}</pre>`;
+                    const safeLog = jsRes.log.replace(/</g, '&lt;');
+                    resultHtml += `<pre class="score-log">${safeLog}</pre>`;
                 }
 
                 document.getElementById('scoreresult').innerHTML = resultHtml;
                 scoreModal.style.display = 'flex';
                 log('Scoring complete');
             } catch (e) {
-                log('Score error: ' + e);
-                document.getElementById('scoreresult').innerHTML = `<span style="color:red">An error occurred during scoring. See console log.</span>`;
+                const rawMsg = (e && typeof e.message === 'string') ? e.message : String(e);
+                const fullMsg = rawMsg || 'Unknown scoring error';
+                const summary = extractPythonErrorMessage(fullMsg, 'Scoring error');
+                const safeSummary = (summary || 'Scoring error')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                log('Score error: ' + fullMsg);
+                document.getElementById('scoreresult').innerHTML = `
+                    <span style="color:red; font-weight:bold;">${safeSummary}</span>
+                `;
                 scoreModal.style.display = 'flex';
             }
         }

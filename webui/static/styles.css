@@ -338,6 +338,28 @@ pre {
   color: var(--text-primary);
 }
 
+#errorModal #errormsg {
+  color: var(--text-primary);
+}
+
+#errorModal #errormsg .error-message {
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+#scoreresult .score-log {
+  background: var(--md-code-bg);
+  border: 1px solid var(--md-border);
+  padding: 12px;
+  margin-top: 12px;
+  text-align: left;
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-family: 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace;
+  white-space: pre-wrap;
+}
+
 /* Markdown Content Styling */
 #readmeContent {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -389,7 +411,7 @@ pre {
 
 #readmeContent h6 {
   font-size: 0.85em;
-  color: #656d76;
+  color: var(--md-blockquote-text);
 }
 
 #readmeContent p {
@@ -399,8 +421,10 @@ pre {
 
 #readmeContent blockquote {
   padding: 0 1em;
-  color: #656d76;
-  border-left: 0.25em solid #d1d9e0;
+  color: var(--md-blockquote-text);
+  border-left: 0.25em solid var(--md-border);
+  background: var(--bg-secondary);
+  border-radius: 4px;
   margin: 0 0 16px 0;
 }
 
@@ -453,13 +477,15 @@ pre {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  background-color: #f6f8fa;
+  background-color: var(--md-code-bg);
+  color: var(--md-code-text);
   border-radius: 6px;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 #readmeContent pre {
-  background-color: #f6f8fa;
+  background-color: var(--md-code-bg);
+  border: 1px solid var(--md-border);
   border-radius: 6px;
   font-size: 85%;
   line-height: 1.45;
@@ -467,7 +493,7 @@ pre {
   padding: 16px;
   margin: 0 0 16px 0;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  color: #1f2328;
+  color: var(--md-code-text);
   position: relative;
 }
 
@@ -479,12 +505,12 @@ pre {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: #f6f8fa;
-  border: 1px solid #d1d9e0;
+  background: var(--md-code-bg);
+  border: 1px solid var(--md-border);
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
-  color: #656d76;
+  color: var(--text-secondary);
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.2s;
@@ -492,8 +518,8 @@ pre {
 }
 
 #readmeContent .copy-button:hover {
-  background: #e1e4e8;
-  color: #24292f;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 #readmeContent .copy-button.copied {
@@ -527,22 +553,23 @@ pre {
 #readmeContent table th,
 #readmeContent table td {
   padding: 6px 13px;
-  border: 1px solid #d1d9e0;
+  border: 1px solid var(--md-table-border);
   text-align: left;
+  color: var(--text-primary);
 }
 
 #readmeContent table th {
   font-weight: 600;
-  background-color: #f6f8fa;
+  background-color: var(--md-table-header-bg);
 }
 
 #readmeContent table tr {
-  background-color: #fff;
-  border-top: 1px solid #d1d9e0;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--md-table-border);
 }
 
 #readmeContent table tr:nth-child(2n) {
-  background-color: #f6f8fa;
+  background-color: var(--md-table-row-even);
 }
 
 #readmeContent img {
@@ -553,7 +580,7 @@ pre {
 }
 
 #readmeContent a {
-  color: #0969da;
+  color: var(--md-link);
   text-decoration: none;
 }
 
@@ -562,14 +589,14 @@ pre {
 }
 
 #readmeContent a:visited {
-  color: #8250df;
+  color: var(--md-link-visited);
 }
 
 #readmeContent hr {
   height: 0.25em;
   padding: 0;
   margin: 24px 0;
-  background-color: #d1d9e0;
+  background-color: var(--md-hr);
   border: 0;
 }
 
@@ -638,98 +665,6 @@ pre {
   #readmeContent .copy-button {
     font-size: 10px;
     padding: 2px 6px;
-  }
-}
-
-/* Dark mode support for users who prefer it */
-@media (prefers-color-scheme: dark) {
-  .modal-content {
-    background: #0d1117;
-    color: #f0f6fc;
-  }
-  
-  #readmeContent {
-    color: #f0f6fc;
-  }
-  
-  #readmeContent h1, 
-  #readmeContent h2, 
-  #readmeContent h3, 
-  #readmeContent h4, 
-  #readmeContent h5, 
-  #readmeContent h6 {
-    color: #f0f6fc;
-  }
-  
-  #readmeContent h1,
-  #readmeContent h2 {
-    border-bottom-color: #30363d;
-  }
-  
-  #readmeContent h6 {
-    color: #7d8590;
-  }
-  
-  #readmeContent blockquote {
-    color: #7d8590;
-    border-left-color: #30363d;
-  }
-  
-  #readmeContent code {
-    background-color: #161b22;
-    color: #f0f6fc;
-  }
-  
-  #readmeContent pre {
-    background-color: #161b22;
-    color: #f0f6fc;
-  }
-  
-  #readmeContent table th,
-  #readmeContent table td {
-    border-color: #30363d;
-  }
-  
-  #readmeContent table th {
-    background-color: #161b22;
-  }
-  
-  #readmeContent table tr {
-    background-color: #0d1117;
-    border-top-color: #30363d;
-  }
-  
-  #readmeContent table tr:nth-child(2n) {
-    background-color: #161b22;
-  }
-  
-  #readmeContent a {
-    color: #58a6ff;
-  }
-  
-  #readmeContent a:visited {
-    color: #bc8cff;
-  }
-  
-  #readmeContent hr {
-    background-color: #30363d;
-  }
-  
-  #readmeContent .copy-button {
-    background: #21262d;
-    border-color: #30363d;
-    color: #7d8590;
-  }
-  
-  #readmeContent .copy-button:hover {
-    background: #30363d;
-    color: #f0f6fc;
-  }
-  
-  #readmeContent .copy-button.copied {
-    color: #3fb950;
-    background: #0d4927;
-    border-color: #238636;
   }
 }
 

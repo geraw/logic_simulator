@@ -86,27 +86,27 @@ By the end of the simulation (step 16), the input `I` has contained eight `1`s. 
 
 ### Counter Circuit Diagram
 
-Below is a diagram of the 3-bit synchronous counter we created above. The yellow-highlighted signals (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) are generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals O0, O1, and O2 to represent the output of the circuit (the counter's current state).
+Below is a diagram of the 3-bit synchronous counter we created above. The yellow circles (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) are generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals O0, O1, and O2 to represent the outputs of the circuit (the counter's current state).
 
 ```mermaid
 graph LR
 
         subgraph Least Significant Bit 
-            XOR0 --> O0
+            XOR0 --> O0((O0))
             D0 --> XOR0(XOR)
-            O0 --> DD0(D) --> D0
+            O0 --> DD0(D) --> D0((D0))
             I --> XOR0
             D0 --> AND0(AND)
             I --> AND0
         end
 
-        AND0 --> C1
+        AND0 --> C1((C1))
 
         subgraph Middle Bit
             direction LR
-            XOR1 --> O1
+            XOR1 --> O1((O1))
             D1 --> XOR1(XOR)
-            O1 -->  DD1(D) --> D1
+            O1 -->  DD1(D) --> D1((D1))
             C1 --> XOR1(XOR)
             D1 --> AND1(AND)
             C1 --> AND1
@@ -115,7 +115,7 @@ graph LR
 
         subgraph Most Significant Bit
             direction LR
-            XOR2 --> O2 
+            XOR2 --> O2((O2))
             D2 --> XOR2(XOR)
             O2 -->  D2(D)
             AND1 --> XOR2 

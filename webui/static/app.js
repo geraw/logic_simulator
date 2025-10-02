@@ -379,6 +379,11 @@ if (window.appInitialized) {
                 setTimeout(() => {
                     renderMathInElement(readmeContentEl);
                     enhanceCodeBlocks(readmeContentEl);
+                    if (window.mermaid) {
+                        mermaid.run({
+                            nodes: readmeContentEl.querySelectorAll('.mermaid')
+                        });
+                    }
                 }, 100);
                 
                 readmeModal.style.display = 'flex';

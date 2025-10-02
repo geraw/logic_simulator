@@ -83,6 +83,47 @@ For example, let's look at the 8th step:
 
 By the end of the simulation (step 16), the input `I` has contained eight `1`s. The counter value `(O2, O1, O0)` is `000`, because the 3-bit counter has counted to 7 and then wrapped around back to 0.
 
+### Counter Circuit Diagram
+
+Below is a diagram of the 3-bit synchronous counter from `counter.cir`. This circuit increments its value when the input `I` is 1.
+
+```mermaid
+graph TD
+    subgraph 3-Bit Counter
+        direction LR
+
+        subgraph Bit 0
+            D0_out -- "O0' " --> XOR0
+            I_in(I) --> XOR0
+            XOR0 -- "O0" --> D0(D Flip-Flop)
+            D0 --> D0_out(O0')
+            D0_out --> AND1
+            D0_out --> O0_out(O0)
+        end
+
+        subgraph Bit 1
+            D1_out -- "O1' " --> XOR1
+            I_in(I) --> AND1
+            AND1 -- "carry0" --> XOR1
+            XOR1 -- "O1" --> D1(D Flip-Flop)
+            D1 --> D1_out(O1')
+            D1_out --> AND2
+            D1_out --> O1_out(O1)
+        end
+
+        subgraph Bit 2
+            D0_out --> AND2
+            D1_out --> AND2
+            I_in(I) --> AND2
+            AND2 -- "carry1" --> XOR2
+            D2_out -- "O2' " --> XOR2
+            XOR2 -- "O2" --> D2(D Flip-Flop)
+            D2 --> D2_out(O2')
+            D2_out --> O2_out(O2)
+        end
+    end
+```
+
 ## 3. Advanced Concepts: Sequential Circuits
 
 The `D` gate (D-type flip-flop) is used to create circuits with memory (sequential logic). It introduces a one-step delay, meaning its output at a given step is equal to its input from the *previous* step. The counter example above makes extensive use of it to store its state between steps.

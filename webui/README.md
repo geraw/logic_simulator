@@ -43,16 +43,17 @@ Here is the complete circuit for the counter:
 
 ```
 # Macro Definitions (using only NAND as a primitive gate)
-NOT(x)      := NAND(x, x)
-AND(x,y)    := NOT(NAND(x, y))
-OR(x,y)     := NAND(NOT(x), NOT(y))
-XOR(x,y)    := NAND(NAND(a, NOT(b)), NAND(NOT(a), b))
+AND(x,y)    := NAND(NAND(x, y), NAND(x, y))
+XOR(x,y)    := NAND(NAND(x, NAND(x, y)), NAND(y, NAND(x, y)))
 
-# A 3-bit binary counter using D flip-flops
-# O0 is the least significant bit.
-O0 = XOR(D(O0, 0), I)
-O1 = XOR(D(O1, 0), AND(D(O0, 0), I))
-O2 = XOR(D(O2, 0), AND(D(O1, 0), AND(D(O0, 0), I)))
+# An n-bit binary counter using D flip-flops and NAND gates
+D0=D(O0,0)
+D1=D(O1,0)
+C1=AND(D0,I)
+
+O0 = XOR(D0,I)
+O1 = XOR(D1, C1)
+O2 = XOR(D(O2,0), AND(D1, C1))
 ```
 
 ### How to Run the Simulation
@@ -85,43 +86,44 @@ By the end of the simulation (step 16), the input `I` has contained eight `1`s. 
 
 ### Counter Circuit Diagram
 
-Below is a diagram of the 3-bit synchronous counter from `counter.cir`. This circuit increments its value when the input `I` is 1.
+Below is a diagram of the 3-bit synchronous counter we created above. The yellow-highlighted signals (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) are generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals O0, O1, and O2 to represent the output of the circuit (the counter's current state).
 
 ```mermaid
-graph TD
-    subgraph 3-Bit Counter
-        direction LR
+graph LR
 
-        subgraph Bit 0
-            D0_out -- "O0' " --> XOR0
-            I_in(I) --> XOR0
-            XOR0 -- "O0" --> D0(D Flip-Flop)
-            D0 --> D0_out(O0')
-            D0_out --> AND1
-            D0_out --> O0_out(O0)
+        subgraph Least Significant Bit 
+            XOR0 --> O0
+            D0 --> XOR0(XOR)
+            O0 --> DD0(D) --> D0
+            I --> XOR0
+            D0 --> AND0(AND)
+            I --> AND0
         end
 
-        subgraph Bit 1
-            D1_out -- "O1' " --> XOR1
-            I_in(I) --> AND1
-            AND1 -- "carry0" --> XOR1
-            XOR1 -- "O1" --> D1(D Flip-Flop)
-            D1 --> D1_out(O1')
-            D1_out --> AND2
-            D1_out --> O1_out(O1)
+        AND0 --> C1
+
+        subgraph Middle Bit
+            direction LR
+            XOR1 --> O1
+            D1 --> XOR1(XOR)
+            O1 -->  DD1(D) --> D1
+            C1 --> XOR1(XOR)
+            D1 --> AND1(AND)
+            C1 --> AND1
         end
 
-        subgraph Bit 2
-            D0_out --> AND2
-            D1_out --> AND2
-            I_in(I) --> AND2
-            AND2 -- "carry1" --> XOR2
-            D2_out -- "O2' " --> XOR2
-            XOR2 -- "O2" --> D2(D Flip-Flop)
-            D2 --> D2_out(O2')
-            D2_out --> O2_out(O2)
+
+        subgraph Most Significant Bit
+            direction LR
+            XOR2 --> O2 
+            D2 --> XOR2(XOR)
+            O2 -->  D2(D)
+            AND1 --> XOR2 
         end
-    end
+
+
+    classDef highlight fill:#fffccc;
+    class O0,O1,O2,D0,D1,C1 highlight;
 ```
 
 ## 3. Advanced Concepts: Sequential Circuits

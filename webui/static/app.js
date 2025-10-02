@@ -735,7 +735,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                     d.textContent = k + ': ' + v;
                     outDiv.appendChild(d);
                 });
-                log('Simulation complete');
+                log('Simulation complete with outputs displayed');
             } catch (e) {
                 const rawMsg = (e && typeof e.message === 'string') ? e.message : String(e);
                 const fullMsg = rawMsg || 'Unknown error';

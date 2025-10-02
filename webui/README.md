@@ -86,7 +86,7 @@ By the end of the simulation (step 16), the input `I` has contained eight `1`s. 
 
 ### Counter Circuit Diagram
 
-Below is a diagram of the 3-bit synchronous counter we created above. The yellow circles (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) are generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals O0, O1, and O2 to represent the outputs of the circuit (the counter's current state).
+Below is a diagram of the 3-bit synchronous counter we created above. We use yellow circles (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) to represent generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals `O0`, `O1`, and `O2` to represent the outputs of the circuit (the counter's current state). The input signal `I` is also drawn as a yellow circle.
 
 ```mermaid
 graph LR
@@ -95,7 +95,7 @@ graph LR
             XOR0 --> O0((O0))
             D0 --> XOR0(XOR)
             O0 --> DD0(D) --> D0((D0))
-            I --> XOR0
+            I((I)) --> XOR0
             D0 --> AND0(AND)
             I --> AND0
         end
@@ -123,7 +123,7 @@ graph LR
 
 
     classDef highlight fill:#fffccc;
-    class O0,O1,O2,D0,D1,C1 highlight;
+    class O0,O1,O2,D0,D1,C1,I highlight;
 ```
 
 ## 3. Advanced Concepts: Sequential Circuits

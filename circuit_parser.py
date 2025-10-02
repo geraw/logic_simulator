@@ -117,41 +117,16 @@ def parse_file(filepath: str) -> Circuit:
         # This handles errors that occur during the transformation phase.
         original = e.orig_exc
         if isinstance(original, ValueError):
-            error_message = (
-                f"\n--- Semantic Error in '{filepath}' ---\n"
-                f"{original}\n\n"
-                f"Please check for issues like duplicate definitions or incorrect macro usage."
-            )
-            raise RuntimeError(error_message) from e
+            raise RuntimeError(f"ValueError: {original}") from e
         else:
             # Re-raise if it's an unexpected error type
             raise
 
     except LarkError as e:
-        
-        
         # This handles syntax errors found by Lark.
-        context = e.get_context(content).strip()
-        line, col = e.line, e.column
-        
-        error_pointer = ' ' * (col - 1) + '^'
-        
-        error_message = (
-            f"\n--- Syntax Error in '{filepath}' at Line {line}, Column {col} ---\n"
-            f"{context}\n"
-            f"{error_pointer}\n"
-            f"Details: {e}"
-        )
-        raise RuntimeError(error_message) from e
+        raise RuntimeError(f"LarkError: {e}") from e
         
     except Exception as e:
         # This is a fallback for unexpected errors during the parsing/transformation phase.
-        error_message = (
-            f"\n--- An Unexpected Parser Error Occurred ---\n"
-            f"Error Type: {type(e).__name__}\n"
-            f"Error Details: {e}\n\n"
-            f"This is likely caused by a subtle syntax issue in '{filepath}' or\n"
-            f"a mismatch between the grammar and the parser logic."
-        )
-        raise RuntimeError(error_message) from e
+        raise RuntimeError(f"{type(e).__name__}: {e}") from e
 

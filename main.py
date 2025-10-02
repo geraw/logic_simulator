@@ -66,37 +66,44 @@ def main():
 
     # --- Parse, Simulate, and Display Results ---
     try:
-        print(f"Parsing circuit file: {args.circuit_file}...")
         circuit = parse_file(args.circuit_file)
-
-        print("Initializing simulator and expanding macros...")
         sim = Simulator(circuit)
-
-        print(f"Running simulation for {num_steps} steps...")
         all_results = sim.run(inputs, num_steps)
-        print("-" * 30)
-        print("Simulation Complete!")
-        print("-" * 30)
+        
+        # --- Display Results ---
+        print("\n" + "="*30)
+        print("      SIMULATION RESULTS")
+        print("="*30)
 
-        # Determine which signals to display
         signals_to_display = args.output if args.output else sorted(all_results.keys())
 
-        # Display inputs first for clarity
-        print("Inputs:")
+        print("\n--- Inputs ---")
         for name in sorted(inputs.keys()):
-            print(f"  {name:<5}: {inputs[name]}")
+            padded_name = f"{name}:".ljust(6)
+            print(f"  {padded_name} {inputs[name]}")
 
-        print("\nOutputs & Internal Signals:")
-        for name in signals_to_display:
-            if name not in inputs:  # Don't print inputs twice
-                print(f"  {name:<5}: {all_results.get(name, 'N/A')}")
+        print("\n--- Outputs & Internal Signals ---")
+        
+        output_signals = [s for s in signals_to_display if s in circuit.outputs]
+        internal_signals = [s for s in signals_to_display if s not in circuit.outputs and s not in inputs]
 
-    except FileNotFoundError as e:
-        print(f"\nError: File not found - {e.filename}")
-    except RecursionError as e:
-        print("\nError: Maximum recursion depth exceeded. Possible combinational loop in the circuit.")
-    except Exception as e:        
-        print(f"\nAn error occurred: {e}")
+        if output_signals:
+            for name in sorted(output_signals):
+                padded_name = f"{name}:".ljust(6)
+                print(f"  {padded_name} {all_results.get(name, 'N/A')}")
+        
+        if internal_signals:
+            print("\n  (Internal)")
+            for name in sorted(internal_signals):
+                padded_name = f"{name}:".ljust(6)
+                print(f"  {padded_name} {all_results.get(name, 'N/A')}")
+        
+        print("\n" + "="*30)
+
+    except (RuntimeError, FileNotFoundError) as e:
+        print(f"\n{type(e).__name__}: {e}")
+    except Exception as e:
+        print(f"\n{type(e).__name__}: {e}")
 
 
 if __name__ == "__main__":

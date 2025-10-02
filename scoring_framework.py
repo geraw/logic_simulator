@@ -98,8 +98,11 @@ class ScoringFramework:
             print("Success! Circuit produces correct outputs for all inputs.")
             return True
             
+        except (RuntimeError, FileNotFoundError) as e:
+            print(f"\n{type(e).__name__}: {e}")
+            return False
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"\n{type(e).__name__}: {e}")
             return False
     
     def _default_error_reporter(self, test_case: Dict[str, Any], 

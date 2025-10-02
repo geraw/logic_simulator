@@ -17,13 +17,12 @@ class Simulator:
     Executes a parsed circuit description over a series of time steps.
     """
     def __init__(self, circuit: Circuit):
-        
         self.circuit = circuit
-        #print(f"Loaded {len(circuit.assignments)} assignments and {len(circuit.macros)} macros.")
-        
-        # First, expand all macros to get expressions with only base functions
-        self.expanded_assignments = self._expand_all_macros()
-        self.history = []  # List of dictionaries, one for each time step's state
+        try:
+            self.expanded_assignments = self._expand_all_macros()
+        except (ValueError, TypeError, MacroCycleError) as e:
+            raise RuntimeError(f"{type(e).__name__}: {e}") from e
+        self.history = []
 
     def _expand_expression(self, expr, macro_context: dict):
         """Recursively expands all macros within a single expression."""
@@ -192,7 +191,7 @@ class Simulator:
                     break  # All signals for this time step are resolved
             
             if unresolved:
-                raise RuntimeError(f"Combinational loop or unresolved dependency detected involving signals: {unresolved}")
+                raise RuntimeError(f"RuntimeError: Combinational loop or unresolved dependency detected involving signals: {unresolved}")
 
         return self.get_outputs(list(self.circuit.assignments.keys()), num_steps)
 

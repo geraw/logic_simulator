@@ -142,41 +142,57 @@ if (window.appInitialized) {
             logEl.scrollTop = logEl.scrollHeight;
         }
 
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function extractPythonErrorMessage(fullMsg, fallbackLabel = 'Error') {
             if (!fullMsg) return fallbackLabel;
+        
             const lines = fullMsg.split('\n');
-            let startIdx = -1;
-
+            let lastExceptionLine = -1;
+        
+            // Find the last line that looks like an exception (e.g., "RuntimeError: ...")
             for (let i = lines.length - 1; i >= 0; i--) {
-                const line = lines[i];
-                const trimmed = line.trim();
-                if (!trimmed) continue;
-                if (trimmed.startsWith('Traceback')) continue;
-                if (trimmed.startsWith('File "')) continue;
-                if (trimmed.startsWith('During handling of the above exception')) continue;
-                startIdx = i;
-                break;
+                if (/^[a-zA-Z0-9_.]*Error:/.test(lines[i])) {
+                    lastExceptionLine = i;
+                    break;
+                }
             }
-
-            if (startIdx === -1) startIdx = lines.length - 1;
-
-            const messageLines = [];
-            const firstLine = lines[startIdx] ?? '';
-            const colonIdx = firstLine.indexOf(':');
-            if (colonIdx >= 0 && colonIdx < firstLine.length - 1) {
-                messageLines.push(firstLine.slice(colonIdx + 1).trim());
-            } else if (firstLine.trim().length > 0) {
-                messageLines.push(firstLine.trim());
+        
+            if (lastExceptionLine === -1) {
+                // If no exception line is found, return the last non-empty line as a fallback.
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    if (lines[i].trim()) {
+                        return lines[i].trim();
+                    }
+                }
+                return fallbackLabel; // Or the original message if all lines are empty
             }
-
-            for (let j = startIdx + 1; j < lines.length; j++) {
-                const raw = lines[j].replace(/\t/g, '    ').replace(/\r/g, '');
-                if (raw.trim().length === 0) continue;
-                messageLines.push(raw.replace(/\s+$/g, ''));
+        
+            // Join the exception line and all subsequent lines
+            const message = lines.slice(lastExceptionLine).join('\n');
+            
+            // The first line is "ExceptionType: Message part 1". We want to extract from "Message part 1"
+            const firstLine = lines[lastExceptionLine];
+            const colonIndex = firstLine.indexOf(':');
+            if (colonIndex !== -1) {
+                // Return the message starting from after the colon on the first line
+                const firstLineMessage = firstLine.substring(colonIndex + 1).trim();
+                const restOfMessage = lines.slice(lastExceptionLine + 1).join('\n');
+                return (firstLineMessage + '\n' + restOfMessage).trim();
             }
-
-            const joined = messageLines.filter(Boolean).join('\n').trim();
-            return joined || fullMsg.trim() || fallbackLabel;
+        
+            // Fallback if the format is unexpected
+            return message.trim();
         }
 
         // Log modal functionality
@@ -724,13 +740,15 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 const rawMsg = (e && typeof e.message === 'string') ? e.message : String(e);
                 const fullMsg = rawMsg || 'Unknown error';
                 const summary = extractPythonErrorMessage(fullMsg, 'Simulation error');
-                const safeSummary = summary
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                const safeSummary = escapeHtml(summary || 'Interpreter error');
+                const safeFull = escapeHtml(fullMsg.trim() || summary || 'Interpreter error');
 
                 document.getElementById('errormsg').innerHTML = `
-                    <div class="error-message">${safeSummary}</div>
+                    <pre class="error-message">${safeSummary}</pre>
+                    <details class="error-details">
+                        <summary>Interpreter output</summary>
+                        <pre>${safeFull}</pre>
+                    </details>
                 `;
                 document.getElementById('errorModal').style.display = 'flex';
                 // Keep full message in log for debugging
@@ -762,6 +780,9 @@ import importlib.util, sys, io
 from contextlib import redirect_stdout
 import json
 
+# Default to a failure state
+result = {'passed': False, 'log': 'An unknown error occurred in the Python scoring script.'}
+
 try:
     spec = importlib.util.spec_from_file_location('score_tmp','score_tmp.py')
     mod = importlib.util.module_from_spec(spec)
@@ -770,17 +791,22 @@ try:
 
     output_log = io.StringIO()
     if not hasattr(mod, 'verify_circuit'):
-        raise RuntimeError('verify_circuit() missing in score.py')
+        raise RuntimeError('Scoring script is invalid: verify_circuit() function is missing.')
 
     with redirect_stdout(output_log):
         ok = mod.verify_circuit('_web_submission.cir')
 
     result = {'passed': ok, 'log': output_log.getvalue()}
-    json.dumps(result)
+
 except Exception as exc:
-    #raise RuntimeError(str(exc))
-    #print(str(exc))
-    print("????!!!!???")
+    # Capture the exception and format it for the log.
+    import traceback
+    error_log = io.StringIO()
+    traceback.print_exc(file=error_log)
+    result = {'passed': False, 'log': f"Scoring script failed:\\n{error_log.getvalue()}"}
+
+# Always ensure a JSON result is returned
+json.dumps(result)
 `;
                 const jsonRes = await pyodide.runPythonAsync(py);
                 const jsRes = JSON.parse(jsonRes);
@@ -801,13 +827,15 @@ except Exception as exc:
                 const rawMsg = (e && typeof e.message === 'string') ? e.message : String(e);
                 const fullMsg = rawMsg || 'Unknown scoring error';
                 const summary = extractPythonErrorMessage(fullMsg, 'Scoring error');
-                const safeSummary = (summary || 'Scoring error')
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                const safeSummary = escapeHtml(summary || 'Scoring error');
+                const safeFull = escapeHtml(fullMsg.trim() || summary || 'Scoring error');
                 log('Score error: ' + fullMsg);
                 document.getElementById('scoreresult').innerHTML = `
-                    <span style="color:red; font-weight:bold;">${safeSummary}</span>
+                    <pre class="error-message" style="color:red; font-weight:bold;">${safeSummary}</pre>
+                    <details class="error-details">
+                        <summary>Interpreter output</summary>
+                        <pre>${safeFull}</pre>
+                    </details>
                 `;
                 scoreModal.style.display = 'flex';
             }

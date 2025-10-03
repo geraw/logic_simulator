@@ -22,14 +22,26 @@ except ImportError as e:
     print(f"Error: Could not import scoring framework: {e}")
     sys.exit(1)
 
-def verify_debruijn(sequence: str, n: int = 4) -> bool:
+def verify_debruijn(sequence: str, n: int = 4) -> tuple[bool, set, set]:
+    """
+    Verify if a sequence is a valid De Bruijn sequence.
+    Returns: (is_valid, missing_patterns, duplicate_patterns)
+    """
     if len(sequence) != 2**n:
-        return False
+        all_patterns = set(format(i, f'0{n}b') for i in range(2**n))
+        return False, all_patterns, set()
+    
     seen = defaultdict(int)
     for i in range(len(sequence)):
         pattern = sequence[i:i+n] if i+n <= len(sequence) else sequence[i:] + sequence[:(i+n-len(sequence))]
         seen[pattern] += 1
-    return all(seen[format(i, f'0{n}b')] == 1 for i in range(2**n))
+    
+    all_patterns = set(format(i, f'0{n}b') for i in range(2**n))
+    missing = all_patterns - set(seen.keys())
+    duplicates = {k for k, v in seen.items() if v > 1}
+    
+    is_valid = len(missing) == 0 and len(duplicates) == 0
+    return is_valid, missing, duplicates
 
 def verify_prefer_one_construction(sequence: str) -> bool:
     seen = set()
@@ -50,14 +62,23 @@ def verify_prefer_one_construction(sequence: str) -> bool:
 
 def validate_debruijn(outputs: Dict[str, str], test_case: Dict[str, Any]) -> bool:
     sequence = outputs.get('Y', '?' * 16)
-    return verify_debruijn(sequence) and verify_prefer_one_construction(sequence)
+    is_valid, _, _ = verify_debruijn(sequence)
+    return is_valid
 
 def error_reporter(test_case: Dict[str, Any], outputs: Dict[str, str], expected: Dict[str, str]) -> None:
     sequence = outputs.get('Y', '?' * 16)
-    if not verify_debruijn(sequence):
+    is_valid, missing, duplicates = verify_debruijn(sequence)
+    
+    if not is_valid:
         print(f"Failed: {sequence} is not a valid De Bruijn sequence")
-    elif not verify_prefer_one_construction(sequence):
-        print(f"Failed: {sequence} does not follow prefer-one construction")
+        if len(sequence) != 16:
+            print(f"  Expected sequence length: 16, got: {len(sequence)}")
+        if missing:
+            print(f"  Missing patterns ({len(missing)}): {sorted(missing)}")
+        if duplicates:
+            print(f"  Duplicate patterns ({len(duplicates)}): {sorted(duplicates)}")
+        if not missing and not duplicates and len(sequence) == 16:
+            print("  Sequence has correct length but fails De Bruijn property")
     else:
         print(f"Failed: {sequence}")
 

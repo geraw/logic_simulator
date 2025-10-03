@@ -28,9 +28,10 @@ class ScoringFramework:
         try:
             # Lazy import so the modules are only loaded if the script is run
             from simulator import Simulator  # type: ignore
-            from circuit_parser import parse_file  # type: ignore
+            from circuit_parser import parse_file, Call  # type: ignore
             self.Simulator = Simulator
             self.parse_file = parse_file
+            self.Call = Call
         except ImportError as e:
             print("Error: Could not import required modules. Make sure you're running from the project root or challenges directory.")
             print(f"Project root detected as: {root_dir}")
@@ -57,6 +58,53 @@ class ScoringFramework:
             current_dir = os.path.dirname(current_dir)
         return os.path.dirname(os.path.abspath(caller_file))
     
+    def _count_gates(self, expr) -> Dict[str, int]:
+        """
+        Recursively count NAND and D gates in an expanded expression.
+        
+        Args:
+            expr: An expression node (Call, Variable, or Number)
+            
+        Returns:
+            Dictionary with counts for 'NAND' and 'D' gates
+        """
+        counts = {'NAND': 0, 'D': 0}
+        
+        if isinstance(expr, self.Call):
+            # Count this gate if it's NAND or D
+            if expr.name == 'NAND':
+                counts['NAND'] += 1
+            elif expr.name == 'D':
+                counts['D'] += 1
+            
+            # Recursively count gates in arguments
+            for arg in expr.args:
+                sub_counts = self._count_gates(arg)
+                counts['NAND'] += sub_counts['NAND']
+                counts['D'] += sub_counts['D']
+        
+        return counts
+    
+    def count_circuit_gates(self, sim) -> Dict[str, int]:
+        """
+        Count total NAND and D gates in the circuit after macro expansion.
+        
+        Args:
+            sim: Simulator instance with expanded assignments
+            
+        Returns:
+            Dictionary with total counts for 'NAND' and 'D' gates
+        """
+        total_counts = {'NAND': 0, 'D': 0}
+        
+        # expanded_assignments is a dict mapping signal names to expanded expressions
+        for signal, expr in sim.expanded_assignments.items():
+            gate_counts = self._count_gates(expr)
+            total_counts['NAND'] += gate_counts['NAND']
+            total_counts['D'] += gate_counts['D']
+        
+        return total_counts
+    
     def run_circuit_test(self, 
                         circuit_file: str,
                         test_cases: List[Dict[str, Any]],
@@ -80,6 +128,9 @@ class ScoringFramework:
             circuit = self.parse_file(circuit_file)
             sim = self.Simulator(circuit)
             
+            # Count gates after macro expansion
+            gate_counts = self.count_circuit_gates(sim)
+            
             for test_case in test_cases:
                 inputs = test_case['inputs']
                 expected = test_case.get('expected', {})
@@ -96,6 +147,7 @@ class ScoringFramework:
                     return False
             
             print("Success! Circuit produces correct outputs for all inputs.")
+            print(f"Gates used: {gate_counts['NAND']} NAND, {gate_counts['D']} D")
             return True
             
         except (RuntimeError, FileNotFoundError) as e:

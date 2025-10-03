@@ -1,35 +1,12 @@
-# De Bruijn sequence generator using prefer-one construction
-NOT(x) := NAND(x, x)
-AND(x,y) := NOT(NAND(x, y))
-AND4(x,y,z,w) := AND(AND(x,y),AND(z,w))
-OR(x,y) := NAND(NOT(x), NOT(y))
-OR8(a,b,c,d,e,f,g,h) := OR(OR(OR(a,b),OR(c,d)),OR(OR(e,f),OR(g,h)))
+# The prefer-one De Bruijn sequence using 4 D flip-flops and 6 NAND gates
+D1 = D(Y,0)
+D2 = D(D1,0)
+D3 = D(D2,0)
+D4 = D(D3,0)
 
-# Try appending 1 first (check if next state exists in history)
-
-# Y should generate: 1111011001010000
-
-Y1 = D(Y,0)
-Y2 = D(D(Y,0),0)
-Y3 = D(D(D(Y,0),0),0)
-Y4 = D(D(D(D(Y,0),0),0),0)
-
-H0001 = OR(AND4(NOT(Y4), NOT(Y3), NOT(Y2), Y1), D(H0001,0))
-H0011 = OR(AND4(NOT(Y4), NOT(Y3),     Y2 , Y1), D(H0011,0))
-H0101 = OR(AND4(NOT(Y4),     Y3 , NOT(Y2), Y1), D(H0101,0))
-H0111 = OR(AND4(NOT(Y4),     Y3 ,     Y2 , Y1), D(H0111,0))
-H1001 = OR(AND4(    Y4 , NOT(Y3), NOT(Y2), Y1), D(H1001,0))
-H1011 = OR(AND4(    Y4 , NOT(Y3),     Y2 , Y1), D(H1011,0))
-H1101 = OR(AND4(    Y4 ,     Y3 , NOT(Y2), Y1), D(H1101,0))
-H1111 = OR(AND4(    Y4 ,     Y3 ,     Y2 , Y1), D(H1111,0))
-
-Y = OR8(
-        AND4(NOT(Y3), NOT(Y2), NOT(Y1), NOT(H0001)),
-        AND4(NOT(Y3), NOT(Y2),     Y1 , NOT(H0011)),
-        AND4(NOT(Y3),     Y2 , NOT(Y1), NOT(H0101)),
-        AND4(NOT(Y3),     Y2 ,     Y1 , NOT(H0111)),
-        AND4(    Y3 , NOT(Y2), NOT(Y1), NOT(H1001)),
-        AND4(    Y3 , NOT(Y2),     Y1 , NOT(H1011)),
-        AND4(    Y3 ,     Y2 , NOT(Y1), NOT(H1101)),
-        AND4(    Y3 ,     Y2 ,     Y1 , NOT(H1111))
-    )
+T1 = NAND(D2, D1)
+T2 = NAND(D3, T1)
+T3 = NAND(D4, T2)
+T4 = NAND(D4, T3)
+T5 = NAND(T2, T3)
+Y  = NAND(T4, T5)

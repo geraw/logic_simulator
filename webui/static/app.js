@@ -674,15 +674,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
 
         // Input validation
         function validateInputFormat(inputStr) {
-            if (!inputStr) {
-                showError('Input cannot be empty. Expected format: VariableName=BinaryString (e.g., I=1010; X=111)');
-                return false;
-            }
             const assignments = inputStr.split(';').map(s => s.trim()).filter(s => s.length > 0);
-            if (assignments.length === 0) {
-                showError('Input cannot be empty. Expected format: VariableName=BinaryString (e.g., I=1010)');
-                return false;
-            }
             const validVarName = /^[A-Za-z_][A-Za-z0-9_]*$/;
             for (const assignment of assignments) {
                 const parts = assignment.split('=');

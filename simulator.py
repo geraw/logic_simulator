@@ -157,6 +157,32 @@ class Simulator:
         :param inputs: Dict mapping input signal names to their value strings, e.g., {'B': '101'}.
         :param num_steps: The total number of time steps to simulate.
         """
+        # Check for missing input signals before simulation
+        # Collect all variables referenced in the circuit
+        referenced_signals = set()
+        
+        def collect_variables(expr):
+            """Recursively collect all variable names from an expression."""
+            if isinstance(expr, Variable):
+                referenced_signals.add(expr.name)
+            elif isinstance(expr, Call):
+                for arg in expr.args:
+                    collect_variables(arg)
+        
+        # Scan all assignments for variable references
+        for signal, expr in self.expanded_assignments.items():
+            collect_variables(expr)
+        
+        # Determine which signals are defined (either as inputs or assignments)
+        defined_signals = set(inputs.keys()) | set(self.expanded_assignments.keys())
+        
+        # Find signals that are referenced but not defined
+        missing_signals = referenced_signals - defined_signals
+        
+        if missing_signals:
+            missing_list = ', '.join(sorted(missing_signals))
+            raise RuntimeError(f"RuntimeError: The following signals are used in the circuit but not defined: {missing_list}")
+        
         self.history = []
         
         for t in range(num_steps):

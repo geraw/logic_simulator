@@ -30,6 +30,5 @@ s1 = AND(active1, OR(NOT(max_bit), X1))
 s2 = AND(active2, OR(NOT(max_bit), X2))  
 s3 = AND(active3, OR(NOT(max_bit), X3))
 
-# Output: select from highest priority active candidate
-# Priority order: X1 > X2 > X3
-Y = MUX3(X1, X2, X3, s1, s2)
+# Output: the maximum input among the three
+Y = max_bit

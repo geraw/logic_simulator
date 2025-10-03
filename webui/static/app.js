@@ -423,12 +423,13 @@ if (window.appInitialized) {
                 // Update internal state and UI to reflect the selection
                 if (challengeSelect) {
                     challengeSelect.value = challengeName;
-                } else {
-                    log('No challengeSelect element, using buttons only');
                 }
                 document.querySelectorAll('#challengesPanel button').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.challenge === challengeName);
                 });
+                
+                // Load typical inputs for this challenge
+                await loadTypicalInputs(challengeName);
 
             } catch (e) {
                 log('Error showing README: ' + e.message);
@@ -437,6 +438,39 @@ if (window.appInitialized) {
         }
 
         // Challenge code loading
+        async function loadTypicalInputs(challengeName) {
+            if (!challengeName) return;
+            try {
+                const inputResponse = await fetchWithPagesFallback(`challenges/${challengeName}/typical_input`);
+                if (inputResponse.ok) {
+                    const inputText = await inputResponse.text();
+                    const trimmed = inputText.trim();
+                    
+                    // Parse format: "steps, inputs"
+                    const commaIndex = trimmed.indexOf(',');
+                    if (commaIndex !== -1) {
+                        const steps = trimmed.substring(0, commaIndex).trim();
+                        const inputs = trimmed.substring(commaIndex + 1).trim();
+                        
+                        // Set the steps input
+                        const stepsInput = document.getElementById('steps');
+                        if (stepsInput && steps) {
+                            stepsInput.value = steps;
+                        }
+                        
+                        // Set the inputs input
+                        const inputsInput = document.getElementById('inputs');
+                        if (inputsInput) {
+                            inputsInput.value = inputs;
+                        }
+                    }
+                }
+            } catch (inputError) {
+                // Typical input file is optional, so we just ignore errors
+                console.log(`No typical input file for ${challengeName}`);
+            }
+        }
+
         async function loadChallengeCode(challengeName) {
             if (!challengeName) return;
             try {
@@ -444,6 +478,9 @@ if (window.appInitialized) {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const code = await response.text();
                 editor.setValue(code);
+                
+                // Load typical inputs
+                await loadTypicalInputs(challengeName);
             } catch (e) {
                 log(`Failed to load challenge ${challengeName}: ${e.message}`);
                 editor.setValue(`# Failed to load: ${challengeName}\n`);

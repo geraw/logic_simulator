@@ -35,22 +35,22 @@ def is_palindrome(bits: str) -> bool:
 def validate_palindrome_detection(outputs: Dict[str, str], test_case: Dict[str, Any]) -> bool:
     """Validate that the circuit correctly detects palindromes."""
     inputs = test_case['inputs']
-    x_input = inputs['X']
-    expected = '000001' if is_palindrome(x_input) else '000000'
-    result = outputs.get('Y', '?' * 6)
+    i_input = inputs['I']
+    expected = '000001' if is_palindrome(i_input) else '000000'
+    result = outputs.get('O', '?' * 6)
     return result == expected
 
 
 def error_reporter(test_case: Dict[str, Any], outputs: Dict[str, str], expected: Dict[str, str]) -> None:
     """Custom error reporter for palindrome detection."""
     inputs = test_case['inputs']
-    x_input = inputs['X']
-    expected_output = '000001' if is_palindrome(x_input) else '000000'
-    actual_output = outputs.get('Y', '?' * 6)
+    i_input = inputs['I']
+    expected_output = '000001' if is_palindrome(i_input) else '000000'
+    actual_output = outputs.get('O', '?' * 6)
     
-    print(f"Failed for input X={x_input}")
-    print(f"Expected Y={expected_output}")
-    print(f"Got      Y={actual_output}")
+    print(f"Failed for input I={i_input}")
+    print(f"Expected O={expected_output}")
+    print(f"Got      O={actual_output}")
 
 
 def verify_circuit(circuit_file: str) -> bool:
@@ -58,7 +58,7 @@ def verify_circuit(circuit_file: str) -> bool:
     framework = ScoringFramework()
     
     # Generate all possible 6-bit test cases
-    test_cases = IterativeTestGenerator.generate_single_signal_combinations(6, 'X')
+    test_cases = IterativeTestGenerator.generate_single_signal_combinations(6, 'I')
     
     return framework.run_circuit_test(
         circuit_file=circuit_file,

@@ -15,7 +15,7 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 
 ## Requirements
 
-* Python 3.7+
+* Python 3.11+
 * `lark` library
 
 ## Installation

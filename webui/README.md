@@ -35,18 +35,73 @@ XOR(a, b) := NAND(NAND(a, NOT(b)), NAND(NOT(a), b))
 ```
 You can then use these macros just like built-in gates.
 
-## 2. Simulation Tutorial: Building a 3-Bit Counter
+## 2. Simulation Tutorial: Building a Checksum (Parity) Circuit
 
-Let's use a 3-bit binary counter as an example. This circuit increments its value on each clock cycle when the input signal `I` is high (1).
+Let's use a simple checksum circuit as an example. This circuit calculates the running parity (the XOR sum of all bits) of a single input stream `X`. The output `Y` will be `1` if an odd number of `1`s have been received, and `0` otherwise.
 
-Here is the complete circuit for the counter:
+Here is the complete circuit for the checksum:
 
 ```
-# Macro Definitions (using only NAND as a primitive gate)
+# Checksum (Parity) Circuit
+# Computes the parity (XOR of all bits) of input X
+
+# Macro definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(NOT(x), y), AND(x, NOT(y)))
+
+# Use a D flip-flop to accumulate the running parity
+# At each step, parity = XOR of previous parity and current bit
+Y = XOR(D(Y, 0), X)
+```
+
+### How to Run the Simulation
+1.  **Paste the Code:** Copy the checksum circuit code above into the circuit editor in the web interface.
+2.  **Set the Inputs:** In the "Inputs" text field, define the values for the input signal `X`. Let's use an 8-step sequence:
+    ```
+    X=11010010
+    ```
+3.  **Set the Steps:** The number of steps will be automatically inferred from the length of the input sequence (8).
+4.  **Run the Simulation:** Click the **Simulate** (▶) button.
+
+### How to Interpret the Output
+After the simulation runs, the "Outputs" panel will display the final values of all signals. For the input `X=11010010`, the output `Y` will be `10011100`.
+
+This output shows the state of the running parity at each step.
+- At step 1, the first input is `1`. The previous parity was `0` (the default). `Y` becomes `XOR(0, 1) = 1`.
+- At step 2, the input is `1`. The previous parity was `1`. `Y` becomes `XOR(1, 1) = 0`.
+- At step 3, the input is `0`. The previous parity was `0`. `Y` becomes `XOR(0, 0) = 0`.
+- At step 4, the input is `1`. The previous parity was `0`. `Y` becomes `XOR(0, 1) = 1`.
+- ...and so on. The final value of `Y` is `0` because the input sequence contains four `1`s (an even number), so the final parity is even.
+
+### Checksum Circuit Diagram
+Below is a diagram of the checksum circuit consisting of a single XOR gate and a D-type flip-flop creating a feedback loop. Circles represent signals, rectangles represent gates and the numbers on the arrows mark the order of the parameters to a gate, if this matters (e.g. for D gates).
+
+```mermaid
+graph LR
+
+    X((X)) --> XOR
+    XOR --> Y((Y))
+    Y -- 1 --> D --> XOR
+    0((0)) -- 2 --> D
+```
+
+The `D` gate (D-type flip-flop) is used to create circuits with memory (sequential logic). It introduces a one-step delay, meaning its output at a given step is equal to its input from the *previous* step. It is essential for storing the state of the circuit between steps, allowing us to build more complex behaviors like counters and state machines.
+
+
+<!-- ## 3. Solved Example: 3-Bit Counter
+
+Here is the complete circuit for a 3-bit synchronous counter that increments whenever its input `I` is `1`.
+
+
+
+```
+# Macro Definitions
 AND(x,y)    := NAND(NAND(x, y), NAND(x, y))
 XOR(x,y)    := NAND(NAND(x, NAND(x, y)), NAND(y, NAND(x, y)))
 
-# An n-bit binary counter using D flip-flops and NAND gates
+# A 3-bit binary counter using D flip-flops
 D0=D(O0,0)
 D1=D(O1,0)
 C1=AND(D0,I)
@@ -56,37 +111,9 @@ O1 = XOR(D1, C1)
 O2 = XOR(D(O2,0), AND(D1, C1))
 ```
 
-### How to Run the Simulation
-1.  **Paste the Code:** Copy the 3-bit counter circuit code above into the circuit editor in the web interface.
-2.  **Set the Inputs:** In the "Inputs" text field, define the values for the input signal `I`. The counter state signals (`O0`, `O1`, `O2`) are initialized by the `D(..., 0)` gate, so we only need to provide the `I` sequence. Let's use a 16-step sequence:
-    ```
-    I=0010010100101111
-    ```
-3.  **Set the Steps:** The number of steps will be automatically inferred from the length of the input sequence, which is 16. You can also set it manually.
-4.  **Run the Simulation:** Click the **Simulate** (▶) button.
-
-### How to Interpret the Output
-After the simulation runs, the "Outputs" panel will display the final values of all signals. To see the step-by-step history, view the "Log". For the input `I=0010010100101111`, the history will show:
-
-```
-I:    0010010100101111
-O0:   0011100111001010
-O1:   0000011111000110
-O2:   0000000000111110
-```
-
-This output shows the state of the counter at each of the 16 simulation steps. The signals `O2`, `O1`, and `O0` represent a 3-bit binary number, where `O2` is the most significant bit and `O0` is the least significant bit. This number is the total count of `1`s that have appeared in the input signal `I` up to that point in time.
-
-For example, let's look at the 8th step:
-- The input `I` up to step 8 is `00100101`. It contains three `1`s.
-- At step 8, the output is `O2=0`, `O1=1`, `O0=1`.
-- Reading `(O2, O1, O0)` as `011` gives the binary representation for the number 3, which correctly matches the number of `1`s seen in the input.
-
-By the end of the simulation (step 16), the input `I` has contained eight `1`s. The counter value `(O2, O1, O0)` is `000`, because the 3-bit counter has counted to 7 and then wrapped around back to 0.
-
 ### Counter Circuit Diagram
 
-Below is a diagram of the 3-bit synchronous counter we created above. We use yellow circles (`O0`, `O1`, `O2`, `D0`, `D1`, and `C1`) to represent generated signals. We need to generate an intermediate signal if we want to send the output of a gate to multiple other gates. We also generated the signals `O0`, `O1`, and `O2` to represent the outputs of the circuit (the counter's current state). The input signal `I` is also drawn as a yellow circle.
+This diagram shows the structure of the 3-bit counter. Signals in yellow circles (`O0`, `O1`, `O2`, etc.) are generated signals that can be used as inputs to other gates.
 
 ```mermaid
 graph LR
@@ -124,12 +151,7 @@ graph LR
 
     classDef highlight fill:#fffccc;
     class O0,O1,O2,D0,D1,C1,I highlight;
-```
-
-## 3. Advanced Concepts: Sequential Circuits
-
-The `D` gate (D-type flip-flop) is used to create circuits with memory (sequential logic). It introduces a one-step delay, meaning its output at a given step is equal to its input from the *previous* step. The counter example above makes extensive use of it to store its state between steps.
-
+``` -->
 
 
 

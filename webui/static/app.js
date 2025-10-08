@@ -494,47 +494,48 @@ if (window.appInitialized) {
             }
         });
 
-        // Load challenges from a hardcoded list (no network fetch)
+        // Load challenges from the generated JSON file
         async function loadChallenges() {
-            const challenges = [
-                '01-palindrome',
-                '02-debruijn',
-                '03-comparison',
-                '04-majority',
-                '05-checksum',
-                '06-CRC',
-                '99-alice_bob_casino'
-            ];
+            try {
+                const response = await fetchWithPagesFallback('challenges/challenges.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const challenges = await response.json();
 
-            challenges.forEach(c => {
-                // Populate hidden select if present
-                if (challengeSelect) {
-                    const opt = document.createElement('option');
-                    opt.value = c;
-                    opt.textContent = c;
-                    challengeSelect.appendChild(opt);
+                challenges.forEach(c => {
+                    // Populate hidden select if present
+                    if (challengeSelect) {
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        opt.textContent = c;
+                        challengeSelect.appendChild(opt);
+                    }
+
+                    // Create button in the panel
+                    const btn = document.createElement('button');
+                    btn.textContent = c;
+                    btn.dataset.challenge = c;
+                    challengesPanel.appendChild(btn);
+                });
+
+                // If using buttons-only UI, set the first challenge as active by default
+                const anyActive = document.querySelector('#challengesPanel button.active');
+                if (!anyActive) {
+                    const firstBtn = document.querySelector('#challengesPanel button[data-challenge]');
+                    if (firstBtn) firstBtn.classList.add('active');
                 }
 
-                // Create button in the panel
-                const btn = document.createElement('button');
-                btn.textContent = c;
-                btn.dataset.challenge = c;
-                challengesPanel.appendChild(btn);
-            });
-
-            // If using buttons-only UI, set the first challenge as active by default
-            const anyActive = document.querySelector('#challengesPanel button.active');
-            if (!anyActive) {
-                const firstBtn = document.querySelector('#challengesPanel button[data-challenge]');
-                if (firstBtn) firstBtn.classList.add('active');
+                // Add score button at the end
+                const checkBtn = document.createElement('button');
+                checkBtn.textContent = 'Check Solution';
+                checkBtn.id = 'checkSolutionBtn';
+                challengesPanel.appendChild(checkBtn);
+                checkBtn.addEventListener('click', scoreChallenge);
+            } catch (error) {
+                log(`Failed to load challenges: ${error.message}`);
+                challengesPanel.innerHTML = '<p class="error">Could not load challenges. Please try refreshing the page.</p>';
             }
-
-            // Add score button at the end
-            const checkBtn = document.createElement('button');
-            checkBtn.textContent = 'Check Solution';
-            checkBtn.id = 'checkSolutionBtn';
-            challengesPanel.appendChild(checkBtn);
-            checkBtn.addEventListener('click', scoreChallenge);
         }
 
         // Pyodide initialization

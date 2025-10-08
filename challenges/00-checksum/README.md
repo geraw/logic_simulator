@@ -45,20 +45,6 @@ The circuit will be simulated for as many time steps as the length of the input 
 
 The scoring script will test all possible bit combinations for `X` of the specified length. For each test case, it will check that the output is the correct checksum.
 
-## Usage
-
-From the `challenges/05-checksum` directory, run:
-
-```bash
-python score.py --circuit your_solution.cir
-```
-
-You can specify a different bit-width using the `--bits`/`-b` flag (default is 4):
-
-```bash
-python score.py --circuit your_solution.cir --bits 6
-```
-
 ## Tips
 
 - **Use XOR logic.** The checksum (parity) can be computed by XOR-ing all the bits of the input.

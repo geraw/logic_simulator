@@ -31,8 +31,3 @@ This contains all 3-bit patterns exactly once:
 The score is binary:
 - PASS if the output is a valid 16-bit De Bruijn sequence
 - FAIL otherwise
-
-## Usage
-```bash
-python score.py --circuit your_solution.cir
-```

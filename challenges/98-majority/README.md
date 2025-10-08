@@ -40,20 +40,6 @@ The circuit will be simulated for as many time steps as the length of the input 
 
 The scoring script will test all possible bit combinations for `X1`, `X2`, and `X3` of the specified length. For each test case, it will check that the output at each time step is the majority value of the three inputs at that time step.
 
-## Usage
-
-From the `challenges/04-majority` directory, run:
-
-```bash
-python score.py --circuit your_solution.cir
-```
-
-You can specify a different bit-width using the `--bits`/`-b` flag (default is 3):
-
-```bash
-python score.py --circuit your_solution.cir --bits 4
-```
-
 ## Tips
 
 - **Use simple logic.** The majority function for three bits can be implemented as `Y = (X1 & X2) | (X1 & X3) | (X2 & X3)`.

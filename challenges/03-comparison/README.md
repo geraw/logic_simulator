@@ -47,22 +47,6 @@ The circuit will be simulated for as many time steps as the length of the input 
 
 The scoring script exhaustively tests **all** possible bit combinations for `X1`, `X2`, and `X3` of the specified length. For each test case, it runs your circuit, captures the output sequence `Y`, and compares it to the expected largest value. If your circuit produces the correct output for every test case, you pass; otherwise, you fail.
 
-## Usage
-
-From the `challenges/03-comparison` directory, run:
-
-```bash
-python score.py --circuit your_solution.cir
-```
-
-You can specify a different bit-width using the `--bits`/`-b` flag (default is 3):
-
-```bash
-python score.py --circuit your_solution.cir --bits 4
-```
-
-This will test 4-bit inputs instead of 3-bit inputs. Note that the number of test cases grows exponentially with the number of bits (`2^(3·bits)`), so testing large widths may take a long time.
-
 ## Tips
 
 When designing your circuit:

@@ -35,12 +35,6 @@ where A(i) is Alice's bit for round i+1, B(i+1) is Bob's bit for round i+1, and 
 
 Note: Alice's first bit cannot be guaranteed to result in a win, as it has no previous information to work with.
 
-## Usage
-Run the scoring script:
-```bash
-python score.py --circuit path/to/circuit.cir --bits 9
-```
-
 The script will:
 - Test all possible 9-bit combinations
 - Show progress and current worst score

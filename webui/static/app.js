@@ -428,6 +428,9 @@ if (window.appInitialized) {
                     btn.classList.toggle('active', btn.dataset.challenge === challengeName);
                 });
                 
+                // Save the current challenge to local storage
+                localStorage.setItem('logic_simulator_challenge', challengeName);
+
                 // Load typical inputs for this challenge
                 await loadTypicalInputs(challengeName);
 
@@ -876,12 +879,72 @@ json.dumps(result)
             }
         }
 
+        // Function to save session state
+        function saveSessionState() {
+            const activeBtn = document.querySelector('#challengesPanel button.active');
+            const currentChallenge = activeBtn ? activeBtn.dataset.challenge : null;
+            
+            localStorage.setItem('logic_simulator_code', editor.getValue());
+            localStorage.setItem('logic_simulator_inputs', document.getElementById('inputs').value);
+            localStorage.setItem('logic_simulator_steps', document.getElementById('steps').value);
+            if (currentChallenge) {
+                localStorage.setItem('logic_simulator_challenge', currentChallenge);
+            }
+        }
+
+        // Function to restore session state
+        async function restoreSessionState() {
+            const savedCode = localStorage.getItem('logic_simulator_code');
+            const savedInputs = localStorage.getItem('logic_simulator_inputs');
+            const savedSteps = localStorage.getItem('logic_simulator_steps');
+            const savedChallenge = localStorage.getItem('logic_simulator_challenge');
+
+            if (savedChallenge) {
+                // Wait a moment for challenge buttons to be created
+                await new Promise(resolve => setTimeout(resolve, 100));
+                const challengeBtn = document.querySelector(`#challengesPanel button[data-challenge="${savedChallenge}"]`);
+                if (challengeBtn) {
+                    await showChallengeReadme(savedChallenge);
+                }
+            }
+
+            if (savedCode) {
+                editor.setValue(savedCode);
+            }
+            if (savedInputs) {
+                document.getElementById('inputs').value = savedInputs;
+            }
+            if (savedSteps) {
+                document.getElementById('steps').value = savedSteps;
+            }
+            
+            log('Session state restored.');
+        }
+
+        // Debounced save function for the editor
+        let saveTimeout;
+        editor.on('change', function () {
+            checkSyntaxLive(editor.getValue());
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveSessionState, 500);
+        });
+
+        // Save other inputs on change
+        document.getElementById('inputs').addEventListener('input', saveSessionState);
+        document.getElementById('steps').addEventListener('input', saveSessionState);
+
         // Event listeners
         document.getElementById('runBtn').addEventListener('click', simulate);
 
         // Initialize application
-        loadChallenges();
-        showMainReadme();
+        (async () => {
+            await loadChallenges();
+            const restored = localStorage.getItem('logic_simulator_challenge');
+            if (!restored) {
+                showMainReadme();
+            }
+            await restoreSessionState();
+        })();
 
         // Force CodeMirror to respect container size after initial layout
         setTimeout(() => {

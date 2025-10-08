@@ -17,9 +17,3 @@ X = 110011 -> Y = 000001 (palindrome)
 
 ## Scoring
 The score is binary - either your circuit works correctly for all possible 6-bit inputs (pass) or it doesn't (fail).
-
-## Usage
-Run the scoring script:
-```bash
-python score.py --circuit your_circuit.cir
-```

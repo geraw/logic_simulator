@@ -33,18 +33,18 @@
   
   <div class="editor-section">
     <textarea id="code"># Macro Definitions (using only NAND as a primitive gate)
-AND(x,y)    := NAND(NAND(x, y), NAND(x, y))
-XOR(x,y)    := NAND(NAND(x, NAND(x, y)), NAND(y, NAND(x, y)))
+# Checksum (Parity) Circuit Example Solution
+# Computes the parity (XOR of all bits) of input X
 
-# An n-bit binary counter using D flip-flops and NAND gates
-D0=D(O0,0)
-D1=D(O1,0)
-C1=AND(D0,I)
+# Macro definitions (using only NAND as a primitive gate)
+NOT(x)      := NAND(x, x)
+AND(x,y)    := NOT(NAND(x, y))
+OR(x,y)     := NAND(NOT(x), NOT(y))
+XOR(x,y)    := OR(AND(NOT(x), y), AND(x, NOT(y)))
 
-O0 = XOR(D0,I)
-O1 = XOR(D1, C1)
-O2 = XOR(D(O2,0), AND(D1, C1))
-
+# Use a D flip-flop to accumulate the running parity
+# At each step, parity = XOR of previous parity and current bit
+Y = XOR(D(Y, 0), X)
 </textarea>
     
     <div class="panel inputs-panel">

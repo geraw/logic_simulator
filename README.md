@@ -2,6 +2,8 @@
 
 A command-line digital logic circuit simulator built in Python using the Lark parsing library. This tool parses and simulates circuit description files, allowing for the analysis of combinational and sequential logic circuits over time.
 
+**[Try the web version here!](https://geraw.github.io/logic_simulator)**
+
 ## ✨ Features
 
 * **Declarative Syntax**: Describe circuits using a simple, human-readable text format.
@@ -18,14 +20,14 @@ A command-line digital logic circuit simulator built in Python using the Lark pa
 
 ## Installation
 
-1.  **Clone the repository:**
+1. **Clone the repository:**
 
     ```bash
     git clone <repository-url>
     cd logic_simulator
     ```
 
-2.  **Install dependencies:**
+2. **Install dependencies:**
     It's recommended to use a virtual environment.
 
     ```bash
@@ -123,7 +125,8 @@ A D-type flip-flop or delay element.
  ┣ 📜 counter.cir          # An example circuit file
  └ 📜 README.md            # This file
 ```
-# Example Circuit File (counter.cir)
+
+## Example Circuit File (counter.cir)
 
 ```cir
 # Macro Definitions (using only NAND as a primitive gate)
@@ -140,16 +143,19 @@ O2 = XOR(D(O2,0), AND(D(O1,0), AND(D(O0,0),I)))
 
 This example circuit file describes a 3-bit binary counter that increments its value on each clock cycle when the input signal `I` is high (`1`). The outputs `O0`, `O1`, and `O2` represent the least significant bit to the most significant bit of the counter, respectively. The counter uses D flip-flops to store its state and NAND gates to determine the next state based on the current state and the input signal. The macros defined at the beginning of the file allow for the use of standard logic gates like `NOT`, `AND`, `OR`, and `XOR` using only the primitive `NAND` gate.
 
-# Example Usage
+## Example Usage
+
 To simulate the counter circuit defined in `counter.cir`, you can run the following command in your terminal:
+
 
 ```bash
 python main.py counter.cir -i I=0010010100101111
 ```
+
 This command sets the input signal `I` to a specific sequence of bits, simulating the counter's behavior over time. The output will display the state of all signals in the circuit at each time step, allowing you to observe how the counter increments its value based on the input signal.
 The output will look something like this:
 
-```
+```text
 Parsing circuit file: counter.cir...
 Initializing simulator and expanding macros...
 Running simulation for 16 steps...

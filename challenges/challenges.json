@@ -1,8 +1,7 @@
 [
     "00-checksum",
     "01-counter",
-    "02-debruijn",
+    "02-palindrome",
     "03-comparison",
-    "05-palindrome",
-    "99-alice_bob_casino"
+    "05-debruijn"
 ]

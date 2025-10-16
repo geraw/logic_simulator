@@ -1237,7 +1237,7 @@ async function loadLeaderboardFromSheet(csvUrl) {
         const nand = String(nStr).replace(/[^0-9]/g,'') || '';
         const tsObj = new Date(rw['timestamp']||rw['time']||rw['date']||'');
         const tsIso = (!isNaN(tsObj.getTime())) ? tsObj.toISOString() : '';
-        groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d: d, nand: nand, ts: tsObj, tsIso: tsIso });
+    groups[ch].push({ submitter: rw['submitter']||rw['name']||'', d: d, nand: nand, ts: tsObj, tsIso: tsIso });
     });
 
     // Create array of group entries with sorted members and bestKey

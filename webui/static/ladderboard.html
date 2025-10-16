@@ -13,7 +13,9 @@
     /* The main content area should take remaining height and allow sections to share it */
     #content { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; overflow: hidden; }
     /* Each challenge section becomes a flex child and will share available height equally */
-    .ladder-challenge-section { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; padding: 6px; border: 1px solid #e6e6e6; border-radius: 6px; background: #fff; }
+  .ladder-challenge-section { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; padding: 6px; border: 1px solid #e6e6e6; border-radius: 6px; background: #fff; position: relative; }
+  .resize-handle { height: 8px; cursor: ns-resize; background: linear-gradient(90deg, rgba(0,0,0,0.02), rgba(0,0,0,0.06), rgba(0,0,0,0.02)); border-radius: 4px; margin-top: 6px; }
+  .resize-toggle { position: absolute; right: 8px; top: 6px; background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.06); border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 12px; }
     .ladder-challenge-section h3 { margin: 0; font-size: 1rem; }
     /* Scroll wrapper that confines the table/list and provides an independent scrollbar */
     .table-wrap, .list-wrap { overflow: auto; flex: 1 1 auto; min-height: 0; }
@@ -23,8 +25,8 @@
     .ladder-info { flex: 1 }
     pre.csv-preview { white-space: pre-wrap; background:#f6f6f6; padding:8px; border-radius:4px }
     table.raw-table { border-collapse: collapse; width: 100%; }
-    table.raw-table th, table.raw-table td { border: 1px solid #ddd; padding: 6px 8px; }
-    table.raw-table th { text-align: left; }
+    table.raw-table th, table.raw-table td { border: 1px solid #ddd; padding: 6px 8px}
+    table.raw-table th { text-align: left; width: 60px;}
     table.raw-table th.timestamp-col { width: 160px; }
     /* Narrow columns used for gate counts */
     .col-narrow { white-space: nowrap; }
@@ -164,6 +166,7 @@
             if (h === submitterHdr || h === dHdr || h === nandHdr || h === tsHdr) return;
             if (/circuit/i.test(h)) return;
             if (/challenge/i.test(h)) return; // hide challenge column
+            if (/email/i.test(h)) return; // hide email column
             visible.push(h);
           });
 
@@ -215,6 +218,20 @@
             const section = document.createElement('div');
             section.className = 'ladder-challenge-section';
             const h = document.createElement('h3'); h.textContent = chName; section.appendChild(h);
+            // resize toggle
+            const resizeToggle1 = document.createElement('button'); resizeToggle1.className = 'resize-toggle'; resizeToggle1.textContent = '⤢'; resizeToggle1.title = 'Toggle expand';
+            resizeToggle1.addEventListener('click', ()=>{
+              if (section.dataset.expanded === '1') { section.dataset.expanded = '0'; section.style.flex = ''; }
+              else { section.dataset.expanded = '1'; section.style.flex = '3 1 0'; }
+            });
+            section.insertBefore(resizeToggle1, section.firstChild);
+            // add resize toggle (expand/collapse) and resize handle
+            const resizeToggle2 = document.createElement('button'); resizeToggle2.className = 'resize-toggle'; resizeToggle2.textContent = '⤢'; resizeToggle2.title = 'Toggle expand';
+            resizeToggle2.addEventListener('click', ()=>{
+              if (section.dataset.expanded === '1') { section.dataset.expanded = '0'; section.style.flex = ''; }
+              else { section.dataset.expanded = '1'; section.style.flex = '3 1 0'; }
+            });
+            section.insertBefore(resizeToggle2, section.firstChild);
             if (rows.length === 0) {
               const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color = '#666'; section.appendChild(empty);
             } else {
@@ -252,6 +269,15 @@
               table.appendChild(tbody);
               tableWrap.appendChild(table);
               section.appendChild(tableWrap);
+              // add a draggable resize handle at the bottom of the section
+              const handle = document.createElement('div'); handle.className = 'resize-handle'; section.appendChild(handle);
+              (function(){
+                let startY=0, startH=0, dragging=false;
+                function onDown(e){ e.preventDefault(); dragging=true; startY = e.touches ? e.touches[0].clientY : e.clientY; startH = section.getBoundingClientRect().height; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp); }
+                function onMove(e){ if(!dragging) return; e.preventDefault(); const clientY = e.touches ? e.touches[0].clientY : e.clientY; const dy = clientY - startY; const newH = Math.max(80, startH + dy); section.style.flex = '0 0 ' + newH + 'px'; }
+                function onUp(){ dragging=false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); }
+                handle.addEventListener('mousedown', onDown); handle.addEventListener('touchstart', onDown, {passive:false});
+              })();
             }
             content.appendChild(section);
           });
@@ -347,6 +373,15 @@
             }
             listWrap.appendChild(ol);
             section.appendChild(listWrap);
+            // add a resize handle
+            const handle = document.createElement('div'); handle.className = 'resize-handle'; section.appendChild(handle);
+            (function(){
+              let startY=0, startH=0, dragging=false;
+              function onDown(e){ e.preventDefault(); dragging=true; startY = e.touches ? e.touches[0].clientY : e.clientY; startH = section.getBoundingClientRect().height; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp); }
+              function onMove(e){ if(!dragging) return; e.preventDefault(); const clientY = e.touches ? e.touches[0].clientY : e.clientY; const dy = clientY - startY; const newH = Math.max(80, startH + dy); section.style.flex = '0 0 ' + newH + 'px'; }
+              function onUp(){ dragging=false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); }
+              handle.addEventListener('mousedown', onDown); handle.addEventListener('touchstart', onDown, {passive:false});
+            })();
             content.appendChild(section);
           });
           // ensure content fills viewport
@@ -358,6 +393,13 @@
             const section = document.createElement('div');
             section.className = 'ladder-challenge-section';
             const h = document.createElement('h3'); h.textContent = ch; section.appendChild(h);
+            // resize toggle
+            const resizeToggle3 = document.createElement('button'); resizeToggle3.className = 'resize-toggle'; resizeToggle3.textContent = '⤢'; resizeToggle3.title = 'Toggle expand';
+            resizeToggle3.addEventListener('click', ()=>{
+              if (section.dataset.expanded === '1') { section.dataset.expanded = '0'; section.style.flex = ''; }
+              else { section.dataset.expanded = '1'; section.style.flex = '3 1 0'; }
+            });
+            section.insertBefore(resizeToggle3, section.firstChild);
             const listWrap = document.createElement('div'); listWrap.className='list-wrap';
             const ol = document.createElement('ol'); ol.className='ladder-list';
             arr.forEach((row, idx)=>{
@@ -369,6 +411,15 @@
             });
             listWrap.appendChild(ol);
             section.appendChild(listWrap);
+            // add a resize handle
+            const handle = document.createElement('div'); handle.className = 'resize-handle'; section.appendChild(handle);
+            (function(){
+              let startY=0, startH=0, dragging=false;
+              function onDown(e){ e.preventDefault(); dragging=true; startY = e.touches ? e.touches[0].clientY : e.clientY; startH = section.getBoundingClientRect().height; document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); document.addEventListener('touchmove', onMove, {passive:false}); document.addEventListener('touchend', onUp); }
+              function onMove(e){ if(!dragging) return; e.preventDefault(); const clientY = e.touches ? e.touches[0].clientY : e.clientY; const dy = clientY - startY; const newH = Math.max(80, startH + dy); section.style.flex = '0 0 ' + newH + 'px'; }
+              function onUp(){ dragging=false; document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); }
+              handle.addEventListener('mousedown', onDown); handle.addEventListener('touchstart', onDown, {passive:false});
+            })();
             content.appendChild(section);
           });
           // ensure content fills viewport

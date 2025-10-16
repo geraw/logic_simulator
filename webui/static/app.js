@@ -7,21 +7,35 @@ if (window.appInitialized) {
     // Wait for the DOM to be fully loaded before executing the script
     document.addEventListener('DOMContentLoaded', function () {
 
-    // Logic Simulator JavaScript Application
+        // Logic Simulator JavaScript Application
 
-    // Apply persisted or system theme before initializing UI components
-    const savedThemePref = localStorage.getItem('theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedThemePref ? savedThemePref : (systemPrefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', initialTheme);
+        // Apply persisted or system theme before initializing UI components
+        const savedThemePref = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = savedThemePref ? savedThemePref : (systemPrefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', initialTheme);
 
-    // NOTE: CodeMirror may show passive event listener warnings in the console.
+        // NOTE: CodeMirror may show passive event listener warnings in the console.
         // These are expected and normal for text editor functionality:
         // - touchstart/touchmove: Required for proper touch text selection
         // - mousewheel: Required for controlled scrolling within the editor
         // These warnings can be safely ignored as they don't affect functionality or performance.
 
         // Inside the DOMContentLoaded listener...
+        // --- Google Sheets / Form configuration ---
+        // If you want a public, read-only ladderboard, publish your Google Sheet and
+        // paste the CSV URL here. Example: 'https://docs.google.com/spreadsheets/d/e/<id>/pub?output=csv'
+        const PUBLISHED_SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRdfehYU9cYz_oCsm8NqdGKuiDd0N6cuSfaSIirDOZUkpLD7AXtD-XGijSDBvfyE7bIaLS8ZwnGGuA4/pub?gid=1958512379&single=true&output=csv';
+
+        // Optional: Google Form action URL to append rows without a server.
+        // Create a Google Form and set FORM_ACTION to its `formResponse` endpoint.
+        // Example: 'https://docs.google.com/forms/d/e/<FORM_ID>/formResponse'
+        const GOOGLE_FORM_ACTION = 'https://docs.google.com/forms/d/e/1FAIpQLSdN3uWZvbLBdX64xCu_xWUO7orq00VrvyMYUb_nDWAQ_loyZA/formResponse';
+
+        // Map form entry fields (entry.123456) to values sent when submitting.
+        // e.g. { challenge: 'entry.111111', email: 'entry.222222', code: 'entry.333333' }
+        const FORM_ENTRY_MAP = { challenge: 'entry.269672141', submitter: 'entry.489618731', email: 'entry.1430478055', D_gates: 'entry.614063262', NAND_gates: 'entry.548483256', circuit: 'entry.135561246' };
+
         let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             lineNumbers: true,
             mode: 'circuitdsl',
@@ -37,11 +51,11 @@ if (window.appInitialized) {
             editorWrapper.style.height = '100%'; // Fill the container
             editorWrapper.style.maxHeight = '100%'; // Don't grow beyond container
         }
-        
+
         // Force CodeMirror to use container size, not content size
         editor.setSize(null, '100%');
-        
-        
+
+
         // DOM element references
         const logEl = document.getElementById('log');
         const challengeSelect = document.getElementById('challengeSelect');
@@ -55,7 +69,7 @@ if (window.appInitialized) {
         function initializeTheme() {
             const savedTheme = localStorage.getItem('theme');
             const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
+
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
                 updateThemeIcon(savedTheme);
@@ -84,11 +98,11 @@ if (window.appInitialized) {
         function toggleTheme() {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
             updateThemeIcon(newTheme);
-            
+
             // Update CodeMirror theme
             if (editor) {
                 const cmTheme = newTheme === 'dark' ? 'material' : 'default';
@@ -110,7 +124,7 @@ if (window.appInitialized) {
                 const newTheme = e.matches ? 'dark' : 'light';
                 document.documentElement.setAttribute('data-theme', newTheme);
                 updateThemeIcon(newTheme);
-                
+
                 if (editor) {
                     const cmTheme = newTheme === 'dark' ? 'material' : 'default';
                     editor.setOption('theme', cmTheme);
@@ -156,10 +170,10 @@ if (window.appInitialized) {
 
         function extractPythonErrorMessage(fullMsg, fallbackLabel = 'Error') {
             if (!fullMsg) return fallbackLabel;
-        
+
             const lines = fullMsg.split('\n');
             let lastExceptionLine = -1;
-        
+
             // Find the last line that looks like an exception (e.g., "RuntimeError: ...")
             for (let i = lines.length - 1; i >= 0; i--) {
                 if (/^[a-zA-Z0-9_.]*Error:/.test(lines[i])) {
@@ -167,7 +181,7 @@ if (window.appInitialized) {
                     break;
                 }
             }
-        
+
             if (lastExceptionLine === -1) {
                 // If no exception line is found, return the last non-empty line as a fallback.
                 for (let i = lines.length - 1; i >= 0; i--) {
@@ -177,10 +191,10 @@ if (window.appInitialized) {
                 }
                 return fallbackLabel; // Or the original message if all lines are empty
             }
-        
+
             // Join the exception line and all subsequent lines
             const message = lines.slice(lastExceptionLine).join('\n');
-            
+
             // The first line is "ExceptionType: Message part 1". We want to extract from "Message part 1"
             const firstLine = lines[lastExceptionLine];
             const colonIndex = firstLine.indexOf(':');
@@ -190,7 +204,7 @@ if (window.appInitialized) {
                 const restOfMessage = lines.slice(lastExceptionLine + 1).join('\n');
                 return (firstLineMessage + '\n' + restOfMessage).trim();
             }
-        
+
             // Fallback if the format is unexpected
             return message.trim();
         }
@@ -246,18 +260,18 @@ if (window.appInitialized) {
                 literalMidWordUnderscores: true,
                 parseImgDimensions: true
             });
-            
+
             // Add custom extensions for better circuit language support
             converter.addExtension({
                 type: 'lang',
-                filter: function(text) {
+                filter: function (text) {
                     // Better handling of circuit syntax in code blocks
-                    return text.replace(/```cir\n([\s\S]*?)```/g, function(match, code) {
+                    return text.replace(/```cir\n([\s\S]*?)```/g, function (match, code) {
                         return '```circuit\n' + code + '```';
                     });
                 }
             });
-            
+
             return converter;
         }
 
@@ -266,10 +280,10 @@ if (window.appInitialized) {
                 try {
                     window.renderMathInElement(element, {
                         delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\[', right: '\\]', display: true},
-                            {left: '\\(', right: '\\)', display: false}
+                            { left: '$$', right: '$$', display: true },
+                            { left: '$', right: '$', display: false },
+                            { left: '\\[', right: '\\]', display: true },
+                            { left: '\\(', right: '\\)', display: false }
                         ],
                         throwOnError: false,
                         errorColor: '#cc0000',
@@ -327,7 +341,7 @@ if (window.appInitialized) {
                     const targetId = link.getAttribute('href').substring(1);
                     const targetElement = element.querySelector(`#${targetId}`);
                     if (targetElement) {
-                        targetElement.scrollIntoView({ 
+                        targetElement.scrollIntoView({
                             behavior: 'smooth',
                             block: 'start'
                         });
@@ -374,7 +388,7 @@ if (window.appInitialized) {
                 const html = converter.makeHtml(readmeText);
                 const readmeContentEl = document.getElementById('readmeContent');
                 readmeContentEl.innerHTML = html;
-                
+
                 // Enhance the content with interactive features
                 setTimeout(() => {
                     renderMathInElement(readmeContentEl);
@@ -385,7 +399,7 @@ if (window.appInitialized) {
                         });
                     }
                 }, 100);
-                
+
                 readmeModal.style.display = 'flex';
             } catch (e) {
                 log('Error showing main README: ' + e.message);
@@ -411,7 +425,7 @@ if (window.appInitialized) {
                 const html = converter.makeHtml(readmeText);
                 const readmeContentEl = document.getElementById('readmeContent');
                 readmeContentEl.innerHTML = html;
-                
+
                 // Enhance the content with interactive features
                 setTimeout(() => {
                     renderMathInElement(readmeContentEl);
@@ -427,7 +441,7 @@ if (window.appInitialized) {
                 document.querySelectorAll('#challengesPanel button').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.challenge === challengeName);
                 });
-                
+
                 // Save the current challenge to local storage
                 localStorage.setItem('logic_simulator_challenge', challengeName);
 
@@ -448,19 +462,19 @@ if (window.appInitialized) {
                 if (inputResponse.ok) {
                     const inputText = await inputResponse.text();
                     const trimmed = inputText.trim();
-                    
+
                     // Parse format: "steps, inputs"
                     const commaIndex = trimmed.indexOf(',');
                     if (commaIndex !== -1) {
                         const steps = trimmed.substring(0, commaIndex).trim();
                         const inputs = trimmed.substring(commaIndex + 1).trim();
-                        
+
                         // Set the steps input
                         const stepsInput = document.getElementById('steps');
                         if (stepsInput && steps) {
                             stepsInput.value = steps;
                         }
-                        
+
                         // Set the inputs input
                         const inputsInput = document.getElementById('inputs');
                         if (inputsInput) {
@@ -481,7 +495,7 @@ if (window.appInitialized) {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const code = await response.text();
                 editor.setValue(code);
-                
+
                 // Load typical inputs
                 await loadTypicalInputs(challengeName);
             } catch (e) {
@@ -651,15 +665,15 @@ def simulate_inline(code:str, inputs:dict, steps:int):
         const handleResize = (e) => {
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
             const containerRect = container.getBoundingClientRect();
-            
+
             // Calculate position relative to container (body), accounting for header
             const header = document.querySelector('header');
             const headerHeight = header ? header.offsetHeight : 0;
             const totalAvailableHeight = containerRect.height - headerHeight - resizer.offsetHeight - 60; // 60px for footer space
-            
+
             const newEditorHeight = clientY - containerRect.top - headerHeight;
             const newOutputsHeight = totalAvailableHeight - newEditorHeight;
-            
+
             const minEditorHeight = 50;
             const minOutputsHeight = 50;
 
@@ -667,7 +681,7 @@ def simulate_inline(code:str, inputs:dict, steps:int):
                 // Update editor section height
                 editorSection.style.height = newEditorHeight + 'px';
                 editorSection.style.flex = 'none';
-                
+
                 // Update outputs section height
                 outputsSection.style.height = newOutputsHeight + 'px';
                 outputsSection.style.flex = 'none';
@@ -693,10 +707,10 @@ def simulate_inline(code:str, inputs:dict, steps:int):
             // Set editor to 80% and outputs to 20%
             const editorHeight = totalAvailableHeight * 0.8;
             const outputsHeight = totalAvailableHeight * 0.2;
-            
+
             editorSection.style.height = editorHeight + 'px';
             editorSection.style.flex = 'none';
-            
+
             outputsSection.style.height = outputsHeight + 'px';
             outputsSection.style.flex = 'none';
         };
@@ -871,28 +885,107 @@ json.dumps(result)
                     submitBtn.id = 'submitSolutionBtn';
                     submitBtn.textContent = 'Submit Solution';
                     submitBtn.style.marginTop = '8px';
-                    submitBtn.addEventListener('click', async (e) => {
+                    submitBtn.addEventListener('click', (e) => {
+                        // Show a small submission form in the score modal so users can submit to Google Form
+                        const existing = document.getElementById('submissionFormDiv');
+                        if (existing) {
+                            // toggle visibility
+                            existing.style.display = existing.style.display === 'none' ? 'block' : 'none';
+                            return;
+                        }
+
+                        if (!GOOGLE_FORM_ACTION || !FORM_ENTRY_MAP || !FORM_ENTRY_MAP.challenge) {
+                            alert('Submission not configured: GOOGLE_FORM_ACTION or FORM_ENTRY_MAP is missing.');
+                            return;
+                        }
+
                         const code = editor.getValue();
                         const challenge = (document.querySelector('#challengesPanel button.active') || {}).dataset?.challenge || '';
-                        const email = window.prompt('Enter contact email (optional):', '');
-                        if (email === null) return; // user cancelled
 
-                        try {
-                            // POST to server endpoint which will create a GitHub issue using the App
-                            const resp = await fetch('/create_issue', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ challenge_name: challenge, solution_code: code, email: email })
-                            });
-                            if (!resp.ok) {
-                                const text = await resp.text();
-                                throw new Error(text || 'Server error');
+                        const formDiv = document.createElement('div');
+                        formDiv.id = 'submissionFormDiv';
+                        formDiv.style.marginTop = '8px';
+                        formDiv.style.borderTop = '1px solid #ddd';
+                        formDiv.style.paddingTop = '8px';
+
+                        const info = document.createElement('div');
+                        info.textContent = 'Submit this solution to the public ladderboard:';
+                        formDiv.appendChild(info);
+
+                        const nameLabel = document.createElement('label');
+                        nameLabel.textContent = 'Name (optional): ';
+                        const nameInput = document.createElement('input');
+                        nameInput.type = 'text';
+                        nameInput.style.width = '200px';
+                        nameLabel.appendChild(nameInput);
+                        formDiv.appendChild(nameLabel);
+
+                        formDiv.appendChild(document.createElement('br'));
+
+                        const emailLabel = document.createElement('label');
+                        emailLabel.textContent = 'Email (optional): ';
+                        const emailInput = document.createElement('input');
+                        emailInput.type = 'email';
+                        emailInput.style.width = '200px';
+                        emailLabel.appendChild(emailInput);
+                        formDiv.appendChild(emailLabel);
+
+                        formDiv.appendChild(document.createElement('br'));
+
+                        const codeLabel = document.createElement('label');
+                        codeLabel.textContent = 'Code (editable):';
+                        formDiv.appendChild(codeLabel);
+                        formDiv.appendChild(document.createElement('br'));
+                        const codeArea = document.createElement('textarea');
+                        codeArea.style.width = '100%';
+                        codeArea.style.height = '120px';
+                        codeArea.value = code;
+                        formDiv.appendChild(codeArea);
+
+                        const submitFormBtn = document.createElement('button');
+                        submitFormBtn.textContent = 'Submit to Ladderboard';
+                        submitFormBtn.style.marginTop = '8px';
+                        submitFormBtn.addEventListener('click', async () => {
+                            submitFormBtn.disabled = true;
+                            submitFormBtn.textContent = 'Submitting...';
+                            try {
+                                const submissionCode = codeArea.value || '';
+                                const submitter = nameInput.value || '';
+                                const email = emailInput.value || '';
+
+                                // Derive simple gate counts as extra fields (optional)
+                                const dCount = (submissionCode.match(/\bD\(/g) || []).length;
+                                const nandCount = (submissionCode.match(/NAND/gi) || []).length;
+
+                                const entryMap = {};
+                                // Map configured form entries to values
+                                if (FORM_ENTRY_MAP.challenge) entryMap[FORM_ENTRY_MAP.challenge] = challenge;
+                                if (FORM_ENTRY_MAP.submitter) entryMap[FORM_ENTRY_MAP.submitter] = submitter;
+                                if (FORM_ENTRY_MAP.email) entryMap[FORM_ENTRY_MAP.email] = email;
+                                if (FORM_ENTRY_MAP.D_gates) entryMap[FORM_ENTRY_MAP.D_gates] = String(dCount);
+                                if (FORM_ENTRY_MAP.NAND_gates) entryMap[FORM_ENTRY_MAP.NAND_gates] = String(nandCount);
+                                if (FORM_ENTRY_MAP.circuit) entryMap[FORM_ENTRY_MAP.circuit] = submissionCode;
+
+                                const ok = await submitToGoogleForm(GOOGLE_FORM_ACTION, entryMap);
+                                if (ok) {
+                                    submitFormBtn.textContent = 'Submitted ✅';
+                                    formDiv.style.opacity = '0.6';
+                                    log('Submission posted to Google Form');
+                                } else {
+                                    submitFormBtn.textContent = 'Submit to Ladderboard';
+                                    submitFormBtn.disabled = false;
+                                    alert('Failed to submit to Google Form.');
+                                }
+                            } catch (err) {
+                                submitFormBtn.textContent = 'Submit to Ladderboard';
+                                submitFormBtn.disabled = false;
+                                alert('Submission error: ' + (err && err.message ? err.message : err));
                             }
-                            const j = await resp.json();
-                            alert('Issue created: ' + j.issue_url);
-                        } catch (err) {
-                            alert('Failed to create issue: ' + (err.message || err));
-                        }
+                        });
+
+                        formDiv.appendChild(submitFormBtn);
+
+                        scoreresultEl.appendChild(formDiv);
                     });
 
                     // Append the button after the scoreresult content
@@ -923,7 +1016,7 @@ json.dumps(result)
         function saveSessionState() {
             const activeBtn = document.querySelector('#challengesPanel button.active');
             const currentChallenge = activeBtn ? activeBtn.dataset.challenge : null;
-            
+
             localStorage.setItem('logic_simulator_code', editor.getValue());
             localStorage.setItem('logic_simulator_inputs', document.getElementById('inputs').value);
             localStorage.setItem('logic_simulator_steps', document.getElementById('steps').value);
@@ -957,7 +1050,7 @@ json.dumps(result)
             if (savedSteps) {
                 document.getElementById('steps').value = savedSteps;
             }
-            
+
             log('Session state restored.');
         }
 
@@ -984,6 +1077,14 @@ json.dumps(result)
                 showMainReadme();
             }
             await restoreSessionState();
+            // Load ladderboard if sheet URL provided
+            if (PUBLISHED_SHEET_CSV) {
+                try {
+                    await loadLeaderboardFromSheet(PUBLISHED_SHEET_CSV);
+                } catch (err) {
+                    console.warn('Could not load ladderboard:', err);
+                }
+            }
         })();
 
         // Force CodeMirror to respect container size after initial layout
@@ -994,4 +1095,95 @@ json.dumps(result)
         }, 100);
 
     }); // End of DOMContentLoaded
+}
+
+// --- Google Sheets/Form helpers (outside DOMContentLoaded scope) ---
+async function loadLeaderboardFromSheet(csvUrl) {
+    const el = document.getElementById('ladderboard');
+    el.textContent = 'Loading...';
+    const r = await fetch(csvUrl);
+    if (!r.ok) throw new Error('Failed to fetch sheet');
+    const text = await r.text();
+    const rows = text.trim().split('\n').map(l => l.split(','));
+    if (rows.length === 0) {
+        el.textContent = 'No data';
+        return;
+    }
+    const table = document.createElement('table');
+    table.className = 'ladderboard-table';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    rows[0].forEach(h => {
+        const th = document.createElement('th');
+        th.textContent = h;
+        headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    rows.slice(1).forEach(rw => {
+        const tr = document.createElement('tr');
+        rw.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    el.innerHTML = '';
+    el.appendChild(table);
+}
+
+async function submitToGoogleForm(formActionUrl, entryMap) {
+    // entryMap: { 'entry.123': 'Challenge name', ... }
+    // Browsers block fetch/XHR to Google Forms because Google does not send CORS headers.
+    // Workaround: create a hidden <form> targeted to an invisible iframe and submit it.
+    return new Promise((resolve, reject) => {
+        try {
+            const iframeName = 'gs_submit_iframe_' + Date.now();
+            const iframe = document.createElement('iframe');
+            iframe.name = iframeName;
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            const form = document.createElement('form');
+            form.action = formActionUrl;
+            form.method = 'POST';
+            form.target = iframeName;
+            form.style.display = 'none';
+
+            Object.entries(entryMap).forEach(([k, v]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = k;
+                input.value = v;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+
+            const cleanup = () => {
+                setTimeout(() => {
+                    if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+                    if (form.parentNode) form.parentNode.removeChild(form);
+                }, 500);
+            };
+
+            // Resolve when iframe finishes loading (form submission complete or redirected)
+            iframe.onload = function () {
+                cleanup();
+                resolve(true);
+            };
+
+            // Submit the form. If onload doesn't fire (some redirects), fall back after timeout.
+            form.submit();
+            setTimeout(() => {
+                cleanup();
+                resolve(true);
+            }, 4000);
+        } catch (err) {
+            reject(err);
+        }
+    });
 }

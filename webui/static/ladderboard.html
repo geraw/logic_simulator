@@ -288,17 +288,19 @@
         }
         // grouped mode — build groups per challenge
         const groups = {};
-        mapped.forEach(rw=>{
-         const ch = rw['challenge'] || 'unknown';
-         if (!groups[ch]) groups[ch]=[];
-         // normalized header names remove spaces, e.g. 'D gates' -> 'dgates'
-         const dStr = (rw['dgates'] || rw['d'] || '');
-         const nStr = (rw['nandgates'] || rw['nand'] || '');
-         const d = parseInt(String(dStr).replace(/[^0-9]/g,''),10) || 0;
-         const nand = parseInt(String(nStr).replace(/[^0-9]/g,''),10) || 0;
-         const ts = new Date(rw['timestamp']||rw['time']||rw['date']||'');
-         groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d, nand, ts });
-        });
+  mapped.forEach(rw=>{
+   const ch = rw['challenge'] || 'unknown';
+   if (!groups[ch]) groups[ch]=[];
+   // normalized header names remove spaces, e.g. 'D gates' -> 'dgates'
+   const dStr = (rw['dgates'] || rw['d'] || '');
+   const nStr = (rw['nandgates'] || rw['nand'] || '');
+   const d = parseInt(String(dStr).replace(/[^0-9]/g,''),10) || 0;
+   const nand = parseInt(String(nStr).replace(/[^0-9]/g,''),10) || 0;
+   const ts = new Date(rw['timestamp']||rw['time']||rw['date']||'');
+   const tsIso = (ts && !isNaN(ts.getTime())) ? ts.toISOString() : '';
+   // DO NOT include email in the public/grouped model (privacy)
+   groups[ch].push({ submitter: rw['submitter']||rw['name']||'', d, nand, ts, tsIso });
+  });
 
         const content = document.getElementById('content');
 
@@ -406,7 +408,8 @@
               const li = document.createElement('li'); li.className='ladder-row';
               const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
               const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-              const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+              // Do not display the submitter's email publicly
+              const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
               li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
             });
             listWrap.appendChild(ol);

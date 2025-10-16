@@ -929,6 +929,8 @@ json.dumps(result)
                         } catch (e) {}
                         emailInput.addEventListener('input', () => {
                             try { localStorage.setItem('ladder_submit_email', emailInput.value || ''); } catch (e) {}
+                            // Clear invalid styling when the user edits the email
+                            try { emailInput.style.border = ''; } catch (e) {}
                         });
                         emailLabel.appendChild(emailInput);
                         formDiv.appendChild(emailLabel);
@@ -941,6 +943,24 @@ json.dumps(result)
                         submitFormBtn.textContent = 'Submit to Ladderboard';
                         submitFormBtn.style.marginTop = '8px';
                         submitFormBtn.addEventListener('click', async () => {
+                            // Require a non-empty, valid email
+                            const emailVal = (emailInput.value || '').trim();
+                            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!emailVal) {
+                                alert('Please provide an email address (required).');
+                                try { emailInput.style.border = '1px solid red'; } catch (e) {}
+                                try { emailInput.focus(); } catch (e) {}
+                                return;
+                            }
+                            if (!emailRegex.test(emailVal)) {
+                                alert('Please enter a valid email address.');
+                                try { emailInput.style.border = '1px solid red'; } catch (e) {}
+                                try { emailInput.focus(); } catch (e) {}
+                                return;
+                            }
+                            // Clear any invalid styling
+                            try { emailInput.style.border = ''; } catch (e) {}
+
                             submitFormBtn.disabled = true;
                             submitFormBtn.textContent = 'Submitting...';
                             try {

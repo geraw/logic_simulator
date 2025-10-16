@@ -858,7 +858,47 @@ json.dumps(result)
                     resultHtml += `<pre class="score-log">${safeLog}</pre>`;
                 }
 
-                document.getElementById('scoreresult').innerHTML = resultHtml;
+                const scoreresultEl = document.getElementById('scoreresult');
+                scoreresultEl.innerHTML = resultHtml;
+
+                // Remove any previous submit button (avoid duplicates)
+                const prevBtn = document.getElementById('submitSolutionBtn');
+                if (prevBtn && prevBtn.parentElement) prevBtn.parentElement.removeChild(prevBtn);
+
+                // If all tests passed, show a Submit button that opens the Issue Form template
+                if (jsRes.passed) {
+                    const submitBtn = document.createElement('button');
+                    submitBtn.id = 'submitSolutionBtn';
+                    submitBtn.textContent = 'Submit Solution';
+                    submitBtn.style.marginTop = '8px';
+                    submitBtn.addEventListener('click', async (e) => {
+                        const code = editor.getValue();
+                        const challenge = (document.querySelector('#challengesPanel button.active') || {}).dataset?.challenge || '';
+                        const email = window.prompt('Enter contact email (optional):', '');
+                        if (email === null) return; // user cancelled
+
+                        try {
+                            // POST to server endpoint which will create a GitHub issue using the App
+                            const resp = await fetch('/create_issue', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ challenge_name: challenge, solution_code: code, email: email })
+                            });
+                            if (!resp.ok) {
+                                const text = await resp.text();
+                                throw new Error(text || 'Server error');
+                            }
+                            const j = await resp.json();
+                            alert('Issue created: ' + j.issue_url);
+                        } catch (err) {
+                            alert('Failed to create issue: ' + (err.message || err));
+                        }
+                    });
+
+                    // Append the button after the scoreresult content
+                    scoreresultEl.appendChild(submitBtn);
+                }
+
                 scoreModal.style.display = 'flex';
                 log('Scoring complete');
             } catch (e) {

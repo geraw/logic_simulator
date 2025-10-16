@@ -1,0 +1,26 @@
+name: Submit solution
+description: Use this form to submit a solution for a challenge. Submissions will be recorded in `submissions.xml` by a GitHub Action.
+title: "Solution: {{challenge_name}}"
+labels: [submission]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please fill this form to submit a solution. The repository will automatically append your submission to `submissions.xml`.
+  - type: input
+    id: challenge_name
+    attributes:
+      label: Challenge name
+      description: The folder name of the challenge (e.g. `00-checksum`).
+      placeholder: 00-checksum
+  - type: textarea
+    id: solution_code
+    attributes:
+      label: Solution code
+      description: Paste your `.cir` solution here. Use triple backticks for multi-line if needed.
+  - type: input
+    id: email
+    attributes:
+      label: Email
+      description: Your contact email (used only for ladderboard contact).
+      placeholder: alice@example.com

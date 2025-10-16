@@ -554,6 +554,13 @@ pre {
 #readmeContent table td {
   padding: 6px 13px;
   border: 1px solid var(--md-table-border);
+
+/* Ladderboard narrow column helpers */
+.col-narrow { white-space: nowrap; }
+.col-d { width: 4.5em; text-align: right; }
+.col-nand { width: 5.2em; text-align: right; }
+.timestamp-col { width: 9.5em; text-align: left; }
+
   text-align: left;
   color: var(--text-primary);
 }

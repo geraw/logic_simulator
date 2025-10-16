@@ -5,16 +5,31 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Ladderboard</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; padding: 16px; }
-    h1 { margin-top: 0 }
-    .ladder-challenge-section { margin-bottom: 20px; }
-    .ladder-list { padding-left: 20px; }
+    /* Layout: make content fill viewport and distribute sections vertically */
+    html, body { height: 100%; margin: 0; }
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    h1 { margin: 0; }
+    #status { color: #333; }
+    /* The main content area should take remaining height and allow sections to share it */
+    #content { display: flex; flex-direction: column; gap: 12px; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    /* Each challenge section becomes a flex child and will share available height equally */
+    .ladder-challenge-section { display: flex; flex-direction: column; gap: 8px; flex: 1 1 0; min-height: 0; padding: 6px; border: 1px solid #e6e6e6; border-radius: 6px; background: #fff; }
+    .ladder-challenge-section h3 { margin: 0; font-size: 1rem; }
+    /* Scroll wrapper that confines the table/list and provides an independent scrollbar */
+    .table-wrap, .list-wrap { overflow: auto; flex: 1 1 auto; min-height: 0; }
+    .ladder-list { padding-left: 20px; margin: 0; }
     .ladder-row { margin: 6px 0; display:flex; align-items:center; gap:10px }
     .medal { width:28px; height:28px; display:inline-block }
     .ladder-info { flex: 1 }
     pre.csv-preview { white-space: pre-wrap; background:#f6f6f6; padding:8px; border-radius:4px }
     table.raw-table { border-collapse: collapse; width: 100%; }
     table.raw-table th, table.raw-table td { border: 1px solid #ddd; padding: 6px 8px; }
+    table.raw-table th { text-align: left; }
+    table.raw-table th.timestamp-col { width: 160px; }
+    /* Narrow columns used for gate counts */
+    .col-narrow { white-space: nowrap; }
+    .col-d { min-width: 64px; max-width: 100px; text-align: right; }
+    .col-nand { min-width: 64px; max-width: 100px; text-align: right; }
   </style>
 </head>
 <body>
@@ -126,7 +141,31 @@
           const headers = Object.keys(records[0]);
           const circuitIdx = headers.findIndex(h => /circuit/i.test(h));
           const challengeIdx = headers.findIndex(h => /challenge/i.test(h));
-          const showIndices = headers.map(h => !/circuit/i.test(h));
+
+          // Decide visible header order: hide Challenge, put Submitter first (if present), then D gates, NAND gates, Email, Submission Time (timestamp), then others
+          const headerLookup = {};
+          headers.forEach(h => { headerLookup[h.toLowerCase().replace(/[^a-z0-9]/g,'')] = h; });
+          const pickHeader = (re) => {
+            for (const h of headers) if (re.test(h)) return h;
+            return null;
+          };
+          const submitterHdr = pickHeader(/submitter|name/i);
+          const dHdr = pickHeader(/d\s*gates|dgates|^d$/i);
+          const nandHdr = pickHeader(/nand\s*gates|nandgates|^nand$/i);
+          const tsHdr = pickHeader(/timestamp|time|date/i);
+
+          const visible = [];
+          if (submitterHdr) visible.push(submitterHdr);
+          if (dHdr) visible.push(dHdr);
+          if (nandHdr) visible.push(nandHdr);
+          if (tsHdr) visible.push(tsHdr);
+          // add remaining headers except circuit and challenge
+          headers.forEach(h => {
+            if (h === submitterHdr || h === dHdr || h === nandHdr || h === tsHdr) return;
+            if (/circuit/i.test(h)) return;
+            if (/challenge/i.test(h)) return; // hide challenge column
+            visible.push(h);
+          });
 
           // Group records by challenge header value
           const groups = {};
@@ -155,6 +194,20 @@
           const canonical = await fetchChallengesListLocal();
           const order = (canonical && canonical.length) ? canonical : Object.keys(groups).sort();
 
+          // Helper to set content height to fill viewport minus header/status
+          function adjustContentHeight() {
+            try {
+              const contentEl = document.getElementById('content');
+              if (!contentEl) return;
+              const rect = contentEl.getBoundingClientRect();
+              const bottomPadding = 16; // keep a small gap from bottom
+              const newH = Math.max(100, window.innerHeight - rect.top - bottomPadding);
+              contentEl.style.height = newH + 'px';
+            } catch (e) {
+              // ignore
+            }
+          }
+
           // Render a table for each challenge in order
           content.innerHTML = '';
           order.forEach(chName => {
@@ -165,26 +218,46 @@
             if (rows.length === 0) {
               const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color = '#666'; section.appendChild(empty);
             } else {
+              const tableWrap = document.createElement('div'); tableWrap.className = 'table-wrap';
               const table = document.createElement('table'); table.className = 'raw-table';
               const thead = document.createElement('thead'); const trh = document.createElement('tr');
-              headers.forEach((hdr,i)=>{ if (!showIndices[i]) return; const th = document.createElement('th'); th.textContent = hdr; trh.appendChild(th); });
+              // Render headers in preferred visible order
+              visible.forEach(hdr => {
+                const th = document.createElement('th');
+                // Rename timestamp header
+                if (tsHdr && hdr === tsHdr) th.textContent = 'Submission Time';
+                else th.textContent = hdr;
+                // Add classes for styling narrow columns
+                if (tsHdr && hdr === tsHdr) th.className = 'timestamp-col';
+                if (dHdr && hdr === dHdr) th.classList.add('col-d', 'col-narrow');
+                if (nandHdr && hdr === nandHdr) th.classList.add('col-nand', 'col-narrow');
+                trh.appendChild(th);
+              });
               thead.appendChild(trh); table.appendChild(thead);
               const tbody = document.createElement('tbody');
               rows.forEach(rw => {
                 const tr = document.createElement('tr');
-                headers.forEach((hdr,i)=>{
-                  if (!showIndices[i]) return;
+                // Render columns in visible order
+                visible.forEach(hdr => {
                   const td = document.createElement('td');
                   td.textContent = rw[hdr] || '';
+                  // mirror header classes for narrow columns
+                  if (dHdr && hdr === dHdr) td.classList.add('col-d', 'col-narrow');
+                  if (nandHdr && hdr === nandHdr) td.classList.add('col-nand', 'col-narrow');
+                  if (tsHdr && hdr === tsHdr) td.classList.add('timestamp-col');
                   tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
               });
               table.appendChild(tbody);
-              section.appendChild(table);
+              tableWrap.appendChild(table);
+              section.appendChild(tableWrap);
             }
             content.appendChild(section);
           });
+          // ensure content fills viewport
+          adjustContentHeight();
+          window.addEventListener('resize', adjustContentHeight);
           return;
         }
         // grouped mode — build groups per challenge
@@ -259,6 +332,7 @@
             const section = document.createElement('div');
             section.className = 'ladder-challenge-section';
             const h = document.createElement('h3'); h.textContent = chName; section.appendChild(h);
+            const listWrap = document.createElement('div'); listWrap.className='list-wrap';
             const ol = document.createElement('ol'); ol.className='ladder-list';
             if (arr.length === 0) {
               const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color='#666'; section.appendChild(empty);
@@ -267,19 +341,24 @@
                 const li = document.createElement('li'); li.className='ladder-row';
                 const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
                 const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
                 li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
               });
             }
-            section.appendChild(ol);
+            listWrap.appendChild(ol);
+            section.appendChild(listWrap);
             content.appendChild(section);
           });
+          // ensure content fills viewport
+          adjustContentHeight();
+          window.addEventListener('resize', adjustContentHeight);
         } else {
           // Fallback: render whatever groups we discovered from the CSV
           groupEntries.forEach(({ch, arr}) => {
             const section = document.createElement('div');
             section.className = 'ladder-challenge-section';
             const h = document.createElement('h3'); h.textContent = ch; section.appendChild(h);
+            const listWrap = document.createElement('div'); listWrap.className='list-wrap';
             const ol = document.createElement('ol'); ol.className='ladder-list';
             arr.forEach((row, idx)=>{
               const li = document.createElement('li'); li.className='ladder-row';
@@ -288,9 +367,13 @@
               const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
               li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
             });
-            section.appendChild(ol);
+            listWrap.appendChild(ol);
+            section.appendChild(listWrap);
             content.appendChild(section);
           });
+          // ensure content fills viewport
+          adjustContentHeight();
+          window.addEventListener('resize', adjustContentHeight);
         }
       } catch (err) {
         document.getElementById('status').textContent = 'Error: '+(err && err.message?err.message:err);

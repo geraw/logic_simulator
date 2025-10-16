@@ -1292,7 +1292,7 @@ async function loadLeaderboardFromSheet(csvUrl) {
                     const li = document.createElement('li'); li.className = 'ladder-row';
                     const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
                     const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-                    const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                    const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
                     li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
                 });
                 section.appendChild(ol);
@@ -1309,7 +1309,7 @@ async function loadLeaderboardFromSheet(csvUrl) {
                 const li = document.createElement('li'); li.className = 'ladder-row';
                 const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
                 const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
                 li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
             });
             section.appendChild(ol);

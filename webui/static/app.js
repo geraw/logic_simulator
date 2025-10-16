@@ -875,30 +875,15 @@ json.dumps(result)
                 const scoreresultEl = document.getElementById('scoreresult');
                 scoreresultEl.innerHTML = resultHtml;
 
-                // Remove any previous submit button (avoid duplicates)
-                const prevBtn = document.getElementById('submitSolutionBtn');
-                if (prevBtn && prevBtn.parentElement) prevBtn.parentElement.removeChild(prevBtn);
+                // Remove any previous submission panel (avoid duplicates)
+                const prevForm = document.getElementById('submissionFormDiv');
+                if (prevForm && prevForm.parentElement) prevForm.parentElement.removeChild(prevForm);
 
-                // If all tests passed, show a Submit button that opens the Issue Form template
+                // If all tests passed, show the submission panel immediately (no button)
                 if (jsRes.passed) {
-                    const submitBtn = document.createElement('button');
-                    submitBtn.id = 'submitSolutionBtn';
-                    submitBtn.textContent = 'Submit Solution';
-                    submitBtn.style.marginTop = '8px';
-                    submitBtn.addEventListener('click', (e) => {
-                        // Show a small submission form in the score modal so users can submit to Google Form
-                        const existing = document.getElementById('submissionFormDiv');
-                        if (existing) {
-                            // toggle visibility
-                            existing.style.display = existing.style.display === 'none' ? 'block' : 'none';
-                            return;
-                        }
-
-                        if (!GOOGLE_FORM_ACTION || !FORM_ENTRY_MAP || !FORM_ENTRY_MAP.challenge) {
-                            alert('Submission not configured: GOOGLE_FORM_ACTION or FORM_ENTRY_MAP is missing.');
-                            return;
-                        }
-
+                    if (!GOOGLE_FORM_ACTION || !FORM_ENTRY_MAP || !FORM_ENTRY_MAP.challenge) {
+                        alert('Submission not configured: GOOGLE_FORM_ACTION or FORM_ENTRY_MAP is missing.');
+                    } else {
                         const code = editor.getValue();
                         const challenge = (document.querySelector('#challengesPanel button.active') || {}).dataset?.challenge || '';
 
@@ -913,34 +898,44 @@ json.dumps(result)
                         formDiv.appendChild(info);
 
                         const nameLabel = document.createElement('label');
-                        nameLabel.textContent = 'Name (optional): ';
+                        nameLabel.textContent = 'Name: ';
                         const nameInput = document.createElement('input');
                         nameInput.type = 'text';
                         nameInput.style.width = '200px';
+                        // Prefill from localStorage if available
+                        try {
+                            const savedName = localStorage.getItem('ladder_submit_name');
+                            if (savedName) nameInput.value = savedName;
+                        } catch (e) {
+                            // ignore localStorage errors (e.g., private mode)
+                        }
+                        nameInput.addEventListener('input', () => {
+                            try { localStorage.setItem('ladder_submit_name', nameInput.value || ''); } catch (e) {}
+                        });
                         nameLabel.appendChild(nameInput);
                         formDiv.appendChild(nameLabel);
 
                         formDiv.appendChild(document.createElement('br'));
 
                         const emailLabel = document.createElement('label');
-                        emailLabel.textContent = 'Email (optional): ';
+                        emailLabel.textContent = 'Email: ';
                         const emailInput = document.createElement('input');
                         emailInput.type = 'email';
                         emailInput.style.width = '200px';
+                        // Prefill from localStorage if available
+                        try {
+                            const savedEmail = localStorage.getItem('ladder_submit_email');
+                            if (savedEmail) emailInput.value = savedEmail;
+                        } catch (e) {}
+                        emailInput.addEventListener('input', () => {
+                            try { localStorage.setItem('ladder_submit_email', emailInput.value || ''); } catch (e) {}
+                        });
                         emailLabel.appendChild(emailInput);
                         formDiv.appendChild(emailLabel);
 
                         formDiv.appendChild(document.createElement('br'));
 
-                        const codeLabel = document.createElement('label');
-                        codeLabel.textContent = 'Code (editable):';
-                        formDiv.appendChild(codeLabel);
-                        formDiv.appendChild(document.createElement('br'));
-                        const codeArea = document.createElement('textarea');
-                        codeArea.style.width = '100%';
-                        codeArea.style.height = '120px';
-                        codeArea.value = code;
-                        formDiv.appendChild(codeArea);
+                        // No editable code field: submissions will use the current editor content
 
                         const submitFormBtn = document.createElement('button');
                         submitFormBtn.textContent = 'Submit to Ladderboard';
@@ -949,7 +944,8 @@ json.dumps(result)
                             submitFormBtn.disabled = true;
                             submitFormBtn.textContent = 'Submitting...';
                             try {
-                                const submissionCode = codeArea.value || '';
+                                // Use current editor contents for submission (non-editable in the form)
+                                const submissionCode = editor.getValue() || '';
                                 const submitter = nameInput.value || '';
                                 const email = emailInput.value || '';
 
@@ -986,10 +982,7 @@ json.dumps(result)
                         formDiv.appendChild(submitFormBtn);
 
                         scoreresultEl.appendChild(formDiv);
-                    });
-
-                    // Append the button after the scoreresult content
-                    scoreresultEl.appendChild(submitBtn);
+                    }
                 }
 
                 scoreModal.style.display = 'flex';

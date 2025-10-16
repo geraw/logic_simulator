@@ -121,45 +121,177 @@
         const norm = k => (k||'').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
         const mapped = records.map(r=>{ const o={}; for(const k in r) o[norm(k)]=r[k]; return o; });
         if (mode === 'raw') {
-          // Render a raw table but hide Circuit column
+          // Render one table per challenge (hide Circuit column). Use canonical challenge order when available.
           const content = document.getElementById('content');
           const headers = Object.keys(records[0]);
+          const circuitIdx = headers.findIndex(h => /circuit/i.test(h));
+          const challengeIdx = headers.findIndex(h => /challenge/i.test(h));
           const showIndices = headers.map(h => !/circuit/i.test(h));
-          const table = document.createElement('table'); table.className='raw-table';
-          const thead = document.createElement('thead'); const trh = document.createElement('tr');
-          headers.forEach((h,i)=>{ if (!showIndices[i]) return; const th = document.createElement('th'); th.textContent = h; trh.appendChild(th); }); thead.appendChild(trh); table.appendChild(thead);
-          const tbody = document.createElement('tbody');
-          records.forEach(rw=>{ const tr = document.createElement('tr'); headers.forEach((h,i)=>{ if (!showIndices[i]) return; const td = document.createElement('td'); td.textContent = rw[h]||''; tr.appendChild(td); }); tbody.appendChild(tr); });
-          table.appendChild(tbody); content.appendChild(table);
+
+          // Group records by challenge header value
+          const groups = {};
+          records.forEach(rw => {
+            const ch = (challengeIdx >= 0) ? (rw[headers[challengeIdx]] || 'unknown') : 'unknown';
+            if (!groups[ch]) groups[ch] = [];
+            groups[ch].push(rw);
+          });
+
+          // Try to get canonical challenge list (prefer stable ordering)
+          async function fetchChallengesListLocal() {
+            const candidates = ['../../challenges/challenges.json','../challenges/challenges.json','challenges/challenges.json'];
+            for (const p of candidates) {
+              try {
+                const r = await fetch(p);
+                if (!r.ok) continue;
+                const arr = await r.json();
+                if (Array.isArray(arr) && arr.length) return arr;
+              } catch (e) {
+                // ignore
+              }
+            }
+            return null;
+          }
+
+          const canonical = await fetchChallengesListLocal();
+          const order = (canonical && canonical.length) ? canonical : Object.keys(groups).sort();
+
+          // Render a table for each challenge in order
+          content.innerHTML = '';
+          order.forEach(chName => {
+            const rows = groups[chName] || [];
+            const section = document.createElement('div');
+            section.className = 'ladder-challenge-section';
+            const h = document.createElement('h3'); h.textContent = chName; section.appendChild(h);
+            if (rows.length === 0) {
+              const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color = '#666'; section.appendChild(empty);
+            } else {
+              const table = document.createElement('table'); table.className = 'raw-table';
+              const thead = document.createElement('thead'); const trh = document.createElement('tr');
+              headers.forEach((hdr,i)=>{ if (!showIndices[i]) return; const th = document.createElement('th'); th.textContent = hdr; trh.appendChild(th); });
+              thead.appendChild(trh); table.appendChild(thead);
+              const tbody = document.createElement('tbody');
+              rows.forEach(rw => {
+                const tr = document.createElement('tr');
+                headers.forEach((hdr,i)=>{
+                  if (!showIndices[i]) return;
+                  const td = document.createElement('td');
+                  td.textContent = rw[hdr] || '';
+                  tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+              });
+              table.appendChild(tbody);
+              section.appendChild(table);
+            }
+            content.appendChild(section);
+          });
           return;
         }
-        // grouped mode
+        // grouped mode — build groups per challenge
         const groups = {};
         mapped.forEach(rw=>{
-          const ch = rw['challenge'] || 'unknown';
-          if (!groups[ch]) groups[ch]=[];
-          const d = parseInt((rw['d_gates']||rw['d']||'').replace(/[^0-9]/g,''),10)||0;
-          const nand = parseInt((rw['nand_gates']||rw['nand']||'').replace(/[^0-9]/g,''),10)||0;
-          const ts = new Date(rw['timestamp']||rw['time']||rw['date']||'');
-          groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d, nand, ts });
+         const ch = rw['challenge'] || 'unknown';
+         if (!groups[ch]) groups[ch]=[];
+         // normalized header names remove spaces, e.g. 'D gates' -> 'dgates'
+         const dStr = (rw['dgates'] || rw['d'] || '');
+         const nStr = (rw['nandgates'] || rw['nand'] || '');
+         const d = parseInt(String(dStr).replace(/[^0-9]/g,''),10) || 0;
+         const nand = parseInt(String(nStr).replace(/[^0-9]/g,''),10) || 0;
+         const ts = new Date(rw['timestamp']||rw['time']||rw['date']||'');
+         groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d, nand, ts });
         });
+
         const content = document.getElementById('content');
-        Object.keys(groups).sort().forEach(ch=>{
-          const section = document.createElement('div');
-          section.className = 'ladder-challenge-section';
-          const h = document.createElement('h3'); h.textContent = ch; section.appendChild(h);
-          groups[ch].sort((a,b)=>{ const da=String(a.d), db=String(b.d); if (da<db) return -1; if (da>db) return 1; const na=String(a.nand), nb=String(b.nand); if (na<nb) return -1; if (na>nb) return 1; return a.ts - b.ts; });
-          const ol = document.createElement('ol'); ol.className='ladder-list';
-          groups[ch].forEach((row, idx)=>{
-            const li = document.createElement('li'); li.className='ladder-row';
-            const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
-            const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-            const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+row.d+', NAND: '+row.nand+' — '+escapeHtml(row.email||'')+' — '+(row.ts.toString());
-            li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+
+        // Create an array of group entries with their sorted lists and best-key for ordering sections
+        const groupEntries = Object.keys(groups).map(ch => {
+          const arr = groups[ch];
+          // sort lexicographically by D, then NAND, then Timestamp (ISO string)
+          arr.sort((a,b) => {
+            const da = String(a.d || ''), db = String(b.d || '');
+            if (da < db) return -1; if (da > db) return 1;
+            const na = String(a.nand || ''), nb = String(b.nand || '');
+            if (na < nb) return -1; if (na > nb) return 1;
+            const ta = String(a.tsIso || ''), tb = String(b.tsIso || '');
+            if (ta < tb) return -1; if (ta > tb) return 1;
+            return 0;
           });
-          section.appendChild(ol);
-          content.appendChild(section);
+          const best = arr.length ? arr[0] : null;
+          const bestKey = best ? [String(best.d), String(best.nand), String(best.tsIso || '')] : [''];
+          return { ch, arr, bestKey };
         });
+
+        // Sort the challenge sections by their best entry's key lexicographically
+        groupEntries.sort((A,B) => {
+          const ka = A.bestKey; const kb = B.bestKey;
+          for (let i = 0; i < Math.max(ka.length, kb.length); i++) {
+            const aVal = String(ka[i] || '');
+            const bVal = String(kb[i] || '');
+            if (aVal < bVal) return -1;
+            if (aVal > bVal) return 1;
+          }
+          return A.ch.localeCompare(B.ch);
+        });
+
+        // Render each group's section. Prefer canonical challenge order from challenges/challenges.json
+        async function fetchChallengesList() {
+          const candidates = ['../../challenges/challenges.json','../challenges/challenges.json','challenges/challenges.json'];
+          for (const p of candidates) {
+            try {
+              const r = await fetch(p);
+              if (!r.ok) continue;
+              const arr = await r.json();
+              if (Array.isArray(arr) && arr.length) return arr;
+            } catch (e) {
+              // ignore and try next
+            }
+          }
+          return null;
+        }
+
+        const canonicalChallenges = await fetchChallengesList();
+
+        if (canonicalChallenges && canonicalChallenges.length) {
+          // Render in canonical order; include empty sections when no submissions exist
+          canonicalChallenges.forEach(chName => {
+            const found = groupEntries.find(g => g.ch === chName);
+            const arr = found ? found.arr : [];
+            const section = document.createElement('div');
+            section.className = 'ladder-challenge-section';
+            const h = document.createElement('h3'); h.textContent = chName; section.appendChild(h);
+            const ol = document.createElement('ol'); ol.className='ladder-list';
+            if (arr.length === 0) {
+              const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color='#666'; section.appendChild(empty);
+            } else {
+              arr.forEach((row, idx)=>{
+                const li = document.createElement('li'); li.className='ladder-row';
+                const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
+                const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
+                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+              });
+            }
+            section.appendChild(ol);
+            content.appendChild(section);
+          });
+        } else {
+          // Fallback: render whatever groups we discovered from the CSV
+          groupEntries.forEach(({ch, arr}) => {
+            const section = document.createElement('div');
+            section.className = 'ladder-challenge-section';
+            const h = document.createElement('h3'); h.textContent = ch; section.appendChild(h);
+            const ol = document.createElement('ol'); ol.className='ladder-list';
+            arr.forEach((row, idx)=>{
+              const li = document.createElement('li'); li.className='ladder-row';
+              const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
+              const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
+              const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+              li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+            });
+            section.appendChild(ol);
+            content.appendChild(section);
+          });
+        }
       } catch (err) {
         document.getElementById('status').textContent = 'Error: '+(err && err.message?err.message:err);
         console.error(err);

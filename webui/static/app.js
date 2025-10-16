@@ -1203,36 +1203,119 @@ async function loadLeaderboardFromSheet(csvUrl) {
         return;
     }
     const headers = rows[0].map(h => (h || '').trim());
-    const showIndices = headers.map(h => !/circuit/i.test(h));
 
-    const table = document.createElement('table');
-    table.className = 'ladderboard-table';
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-    headers.forEach((h, i) => {
-        if (!showIndices[i]) return;
-        const th = document.createElement('th');
-        th.textContent = h;
-        headerRow.appendChild(th);
-    });
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
+    // Build record objects
+    const records = [];
     for (let r = 1; r < rows.length; r++) {
         const rw = rows[r];
-        const tr = document.createElement('tr');
-        for (let i = 0; i < rw.length; i++) {
-            if (!showIndices[i]) continue;
-            const td = document.createElement('td');
-            td.textContent = rw[i] || '';
-            tr.appendChild(td);
+        const obj = {};
+        for (let i = 0; i < headers.length; i++) {
+            obj[headers[i]] = rw[i] === undefined ? '' : rw[i];
         }
-        tbody.appendChild(tr);
+        records.push(obj);
     }
-    table.appendChild(tbody);
+
+    // Normalize keys
+    const norm = k => (k||'').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+    const mapped = records.map(r=>{ const o={}; for(const k in r) o[norm(k)]=r[k]; return o; });
+
+    // Helper: medal SVG
+    const medalSvg = (type) => {
+        const colors = { gold: '#ffd700', silver: '#c0c0c0', bronze: '#cd7f32' };
+        const color = colors[type] || '#999';
+        return '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="'+color+'" stroke="#333" stroke-width="0.5"/><rect x="10" y="12" width="4" height="8" fill="'+color+'"/></svg>';
+    };
+
+    // Group by challenge and sort per-challenge lexicographically (D, NAND, Timestamp ISO)
+    const groups = {};
+    mapped.forEach(rw=>{
+        const ch = rw['challenge'] || rw['challengename'] || 'unknown';
+        if (!groups[ch]) groups[ch]=[];
+        const dStr = (rw['dgates'] || rw['d'] || '');
+        const nStr = (rw['nandgates'] || rw['nand'] || '');
+        const d = String(dStr).replace(/[^0-9]/g,'') || '';
+        const nand = String(nStr).replace(/[^0-9]/g,'') || '';
+        const tsObj = new Date(rw['timestamp']||rw['time']||rw['date']||'');
+        const tsIso = (!isNaN(tsObj.getTime())) ? tsObj.toISOString() : '';
+        groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d: d, nand: nand, ts: tsObj, tsIso: tsIso });
+    });
+
+    // Create array of group entries with sorted members and bestKey
+    const groupEntries = Object.keys(groups).map(ch => {
+        const arr = groups[ch];
+        arr.sort((a,b)=>{ const da=String(a.d||''), db=String(b.d||''); if (da<db) return -1; if (da>db) return 1; const na=String(a.nand||''), nb=String(b.nand||''); if (na<nb) return -1; if (na>nb) return 1; const ta=String(a.tsIso||''), tb=String(b.tsIso||''); if (ta<tb) return -1; if (ta>tb) return 1; return 0; });
+        const best = arr.length?arr[0]:null;
+        const bestKey = best? [String(best.d||''), String(best.nand||''), String(best.tsIso||'')]: [''];
+        return { ch, arr, bestKey };
+    });
+
+    // Sort challenge sections by bestKey lexicographically
+    groupEntries.sort((A,B)=>{
+        const ka = A.bestKey, kb = B.bestKey;
+        for (let i=0;i<Math.max(ka.length,kb.length);i++){
+            const aVal = String(ka[i]||''), bVal = String(kb[i]||'');
+            if (aVal < bVal) return -1; if (aVal > bVal) return 1;
+        }
+        return A.ch.localeCompare(B.ch);
+    });
+
+    // Render groups as separate lists inside the ladderboard element. Prefer canonical challenge order.
+    async function fetchChallengesList() {
+        const candidates = ['../../challenges/challenges.json','../challenges/challenges.json','challenges/challenges.json'];
+        for (const p of candidates) {
+            try {
+                const r = await fetch(p);
+                if (!r.ok) continue;
+                const arr = await r.json();
+                if (Array.isArray(arr) && arr.length) return arr;
+            } catch (e) {
+                // ignore and try next
+            }
+        }
+        return null;
+    }
+
+    const canonicalChallenges = await fetchChallengesList();
     el.innerHTML = '';
-    el.appendChild(table);
+    if (canonicalChallenges && canonicalChallenges.length) {
+        canonicalChallenges.forEach(chName => {
+            const found = groupEntries.find(g => g.ch === chName);
+            const arr = found ? found.arr : [];
+            const section = document.createElement('div');
+            section.className = 'ladder-challenge-section';
+            const h3 = document.createElement('h4'); h3.textContent = chName; section.appendChild(h3);
+            if (arr.length === 0) {
+                const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color='#666'; section.appendChild(empty);
+            } else {
+                const ol = document.createElement('ol'); ol.className='ladder-list';
+                arr.forEach((row, idx)=>{
+                    const li = document.createElement('li'); li.className = 'ladder-row';
+                    const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
+                    const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
+                    const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                    li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+                });
+                section.appendChild(ol);
+            }
+            el.appendChild(section);
+        });
+    } else {
+        groupEntries.forEach(({ch, arr})=>{
+            const section = document.createElement('div');
+            section.className = 'ladder-challenge-section';
+            const h3 = document.createElement('h4'); h3.textContent = ch; section.appendChild(h3);
+            const ol = document.createElement('ol'); ol.className = 'ladder-list';
+            arr.forEach((row, idx)=>{
+                const li = document.createElement('li'); li.className = 'ladder-row';
+                const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
+                const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
+                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.email||'')+' — '+escapeHtml(row.tsIso||'');
+                li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+            });
+            section.appendChild(ol);
+            el.appendChild(section);
+        });
+    }
 }
 
 async function submitToGoogleForm(formActionUrl, entryMap) {

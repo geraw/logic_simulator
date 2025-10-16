@@ -1108,6 +1108,26 @@ json.dumps(result)
             // Load ladderboard if sheet URL provided
             if (PUBLISHED_SHEET_CSV) {
                 try {
+                    // Add an "Open CSV" button to footerControls that opens the published CSV in a new tab
+                    try {
+                        const footerControls = document.getElementById('footerControls');
+                        if (footerControls && !document.getElementById('openCsvBtn')) {
+                            const openCsvBtn = document.createElement('button');
+                            openCsvBtn.id = 'openCsvBtn';
+                            openCsvBtn.textContent = 'Open Ladderboard';
+                            openCsvBtn.style.marginLeft = '8px';
+                            openCsvBtn.addEventListener('click', () => {
+                                // Open our standalone ladderboard page in raw mode which displays CSV content (hides Circuit column)
+                                // Use buildUrl so the path works correctly when hosted under a repo subpath (e.g. GitHub Pages)
+                                const ladderUrl = buildUrl('webui/static/ladderboard.html') + '?csv=' + encodeURIComponent(PUBLISHED_SHEET_CSV) + '&mode=raw';
+                                window.open(ladderUrl, '_blank');
+                            });
+                            footerControls.appendChild(openCsvBtn);
+                        }
+                    } catch (e) {
+                        console.warn('Could not add Open CSV button', e);
+                    }
+
                     await loadLeaderboardFromSheet(PUBLISHED_SHEET_CSV);
                 } catch (err) {
                     console.warn('Could not load ladderboard:', err);
@@ -1132,32 +1152,84 @@ async function loadLeaderboardFromSheet(csvUrl) {
     const r = await fetch(csvUrl);
     if (!r.ok) throw new Error('Failed to fetch sheet');
     const text = await r.text();
-    const rows = text.trim().split('\n').map(l => l.split(','));
-    if (rows.length === 0) {
+    // Robust CSV parsing to support quoted multiline Circuit fields
+    function parseCsvRows(csvText) {
+        const rows = [];
+        let curField = '';
+        let inQuotes = false;
+        const row = [];
+        for (let i = 0; i < csvText.length; i++) {
+            const ch = csvText[i];
+            const next = csvText[i+1];
+            if (inQuotes) {
+                if (ch === '"') {
+                    if (next === '"') {
+                        curField += '"';
+                        i++; // skip escaped quote
+                    } else {
+                        inQuotes = false;
+                    }
+                } else {
+                    curField += ch;
+                }
+            } else {
+                if (ch === '"') {
+                    inQuotes = true;
+                } else if (ch === ',') {
+                    row.push(curField);
+                    curField = '';
+                } else if (ch === '\r') {
+                    // ignore
+                } else if (ch === '\n') {
+                    row.push(curField);
+                    curField = '';
+                    rows.push(row.slice());
+                    row.length = 0;
+                } else {
+                    curField += ch;
+                }
+            }
+        }
+        if (curField !== '' || row.length > 0) {
+            row.push(curField);
+            rows.push(row.slice());
+        }
+        return rows;
+    }
+
+    const rows = parseCsvRows(text || '');
+    if (!rows || rows.length === 0) {
         el.textContent = 'No data';
         return;
     }
+    const headers = rows[0].map(h => (h || '').trim());
+    const showIndices = headers.map(h => !/circuit/i.test(h));
+
     const table = document.createElement('table');
     table.className = 'ladderboard-table';
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    rows[0].forEach(h => {
+    headers.forEach((h, i) => {
+        if (!showIndices[i]) return;
         const th = document.createElement('th');
         th.textContent = h;
         headerRow.appendChild(th);
     });
     thead.appendChild(headerRow);
     table.appendChild(thead);
+
     const tbody = document.createElement('tbody');
-    rows.slice(1).forEach(rw => {
+    for (let r = 1; r < rows.length; r++) {
+        const rw = rows[r];
         const tr = document.createElement('tr');
-        rw.forEach(cell => {
+        for (let i = 0; i < rw.length; i++) {
+            if (!showIndices[i]) continue;
             const td = document.createElement('td');
-            td.textContent = cell;
+            td.textContent = rw[i] || '';
             tr.appendChild(td);
-        });
+        }
         tbody.appendChild(tr);
-    });
+    }
     table.appendChild(tbody);
     el.innerHTML = '';
     el.appendChild(table);

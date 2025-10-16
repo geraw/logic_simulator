@@ -1,0 +1,170 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Ladderboard</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; padding: 16px; }
+    h1 { margin-top: 0 }
+    .ladder-challenge-section { margin-bottom: 20px; }
+    .ladder-list { padding-left: 20px; }
+    .ladder-row { margin: 6px 0; display:flex; align-items:center; gap:10px }
+    .medal { width:28px; height:28px; display:inline-block }
+    .ladder-info { flex: 1 }
+    pre.csv-preview { white-space: pre-wrap; background:#f6f6f6; padding:8px; border-radius:4px }
+    table.raw-table { border-collapse: collapse; width: 100%; }
+    table.raw-table th, table.raw-table td { border: 1px solid #ddd; padding: 6px 8px; }
+  </style>
+</head>
+<body>
+  <h1>CSCML25 Circuit Challenges Ladderboard</h1>
+  <div id="status">Loading...</div>
+  <div id="content"></div>
+
+  <script>
+    function escapeHtml(value) {
+      if (value === null || value === undefined) return '';
+      return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    // Robust CSV parser (RFC4180-ish) that supports quoted fields with newlines and escaped quotes
+    function parseCsvRows(csvText) {
+      const rows = [];
+      let cur = '';
+      let inQuotes = false;
+      let field = '';
+      const pushField = (r) => { r.push(field); field = ''; };
+      const pushRow = (r) => { rows.push(r.slice()); r.length = 0; };
+
+      const row = [];
+      for (let i = 0; i < csvText.length; i++) {
+        const ch = csvText[i];
+        const next = csvText[i+1];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (next === '"') {
+              field += '"'; // escaped quote
+              i++; // skip next
+            } else {
+              inQuotes = false; // end of quoted field
+            }
+          } else {
+            field += ch;
+          }
+        } else {
+          if (ch === '"') {
+            inQuotes = true;
+          } else if (ch === ',') {
+            row.push(field);
+            field = '';
+          } else if (ch === '\r') {
+            // ignore CR, handle on LF
+          } else if (ch === '\n') {
+            row.push(field);
+            field = '';
+            rows.push(row.slice());
+            row.length = 0;
+          } else {
+            field += ch;
+          }
+        }
+      }
+      // push last field/row
+      if (inQuotes) {
+        // malformed CSV: unterminated quotes — but push as-is
+      }
+      if (field !== '' || row.length > 0) {
+        row.push(field);
+        rows.push(row.slice());
+      }
+      return rows;
+    }
+
+    function parseCsvToObjects(csvText) {
+      const rows = parseCsvRows(csvText || '');
+      if (!rows || rows.length === 0) return [];
+      const headers = rows[0].map(h => (h || '').trim());
+      const objs = [];
+      for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i];
+        const obj = {};
+        for (let j = 0; j < headers.length; j++) {
+          obj[headers[j]] = (cols[j] === undefined) ? '' : cols[j];
+        }
+        objs.push(obj);
+      }
+      return objs;
+    }
+    function medalSvg(type) {
+      const colors = { gold: '#ffd700', silver: '#c0c0c0', bronze: '#cd7f32' };
+      const color = colors[type] || '#999';
+      return '<svg width="28" height="28" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="9" r="5" fill="'+color+'" stroke="#333" stroke-width="0.5" /><rect x="9" y="14" width="6" height="8" fill="'+color+'" /><path d="M6 4 L12 10 L18 4" stroke="#333" stroke-width="1" fill="none" /></svg>';
+    }
+
+    (async function(){
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const csvUrl = params.get('csv');
+        const mode = (params.get('mode')||'grouped').toLowerCase();
+        if (!csvUrl) throw new Error('csv query parameter required');
+        document.getElementById('status').textContent = 'Fetching CSV...';
+        const r = await fetch(csvUrl);
+        if (!r.ok) throw new Error('Fetch failed: '+r.status+' '+r.statusText);
+        const text = await r.text();
+        const records = parseCsvToObjects(text||'');
+        if (!records.length) {
+          document.getElementById('status').textContent = 'No records found';
+          document.getElementById('content').innerHTML = '<pre class="csv-preview">'+escapeHtml(text)+'</pre>';
+          return;
+        }
+        document.getElementById('status').textContent = '';
+        const norm = k => (k||'').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
+        const mapped = records.map(r=>{ const o={}; for(const k in r) o[norm(k)]=r[k]; return o; });
+        if (mode === 'raw') {
+          // Render a raw table but hide Circuit column
+          const content = document.getElementById('content');
+          const headers = Object.keys(records[0]);
+          const showIndices = headers.map(h => !/circuit/i.test(h));
+          const table = document.createElement('table'); table.className='raw-table';
+          const thead = document.createElement('thead'); const trh = document.createElement('tr');
+          headers.forEach((h,i)=>{ if (!showIndices[i]) return; const th = document.createElement('th'); th.textContent = h; trh.appendChild(th); }); thead.appendChild(trh); table.appendChild(thead);
+          const tbody = document.createElement('tbody');
+          records.forEach(rw=>{ const tr = document.createElement('tr'); headers.forEach((h,i)=>{ if (!showIndices[i]) return; const td = document.createElement('td'); td.textContent = rw[h]||''; tr.appendChild(td); }); tbody.appendChild(tr); });
+          table.appendChild(tbody); content.appendChild(table);
+          return;
+        }
+        // grouped mode
+        const groups = {};
+        mapped.forEach(rw=>{
+          const ch = rw['challenge'] || 'unknown';
+          if (!groups[ch]) groups[ch]=[];
+          const d = parseInt((rw['d_gates']||rw['d']||'').replace(/[^0-9]/g,''),10)||0;
+          const nand = parseInt((rw['nand_gates']||rw['nand']||'').replace(/[^0-9]/g,''),10)||0;
+          const ts = new Date(rw['timestamp']||rw['time']||rw['date']||'');
+          groups[ch].push({ submitter: rw['submitter']||rw['name']||'', email: rw['email']||'', d, nand, ts });
+        });
+        const content = document.getElementById('content');
+        Object.keys(groups).sort().forEach(ch=>{
+          const section = document.createElement('div');
+          section.className = 'ladder-challenge-section';
+          const h = document.createElement('h3'); h.textContent = ch; section.appendChild(h);
+          groups[ch].sort((a,b)=>{ const da=String(a.d), db=String(b.d); if (da<db) return -1; if (da>db) return 1; const na=String(a.nand), nb=String(b.nand); if (na<nb) return -1; if (na>nb) return 1; return a.ts - b.ts; });
+          const ol = document.createElement('ol'); ol.className='ladder-list';
+          groups[ch].forEach((row, idx)=>{
+            const li = document.createElement('li'); li.className='ladder-row';
+            const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
+            const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
+            const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+row.d+', NAND: '+row.nand+' — '+escapeHtml(row.email||'')+' — '+(row.ts.toString());
+            li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
+          });
+          section.appendChild(ol);
+          content.appendChild(section);
+        });
+      } catch (err) {
+        document.getElementById('status').textContent = 'Error: '+(err && err.message?err.message:err);
+        console.error(err);
+      }
+    })();
+  </script>
+</body>
+</html>

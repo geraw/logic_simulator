@@ -949,9 +949,24 @@ json.dumps(result)
                                 const submitter = nameInput.value || '';
                                 const email = emailInput.value || '';
 
-                                // Derive simple gate counts as extra fields (optional)
-                                const dCount = (submissionCode.match(/\bD\(/g) || []).length;
-                                const nandCount = (submissionCode.match(/NAND/gi) || []).length;
+                                // Prefer grader-reported gate counts when available (e.g. "Gates used: 27 NAND, 5 D")
+                                let dCount = 0;
+                                let nandCount = 0;
+                                try {
+                                    if (jsRes && jsRes.log) {
+                                        const logText = String(jsRes.log);
+                                        const nandMatch = logText.match(/(\d+)\s*NAND/i);
+                                        const dMatch = logText.match(/(\d+)\s*D\b/i);
+                                        if (nandMatch) nandCount = parseInt(nandMatch[1], 10) || 0;
+                                        if (dMatch) dCount = parseInt(dMatch[1], 10) || 0;
+                                    }
+                                } catch (e) {
+                                    // ignore parsing errors and fall back to heuristics below
+                                }
+
+                                // Fallback: simple heuristics on the submission text if grader didn't report counts
+                                if (!dCount) dCount = (submissionCode.match(/\bD\(/g) || []).length;
+                                if (!nandCount) nandCount = (submissionCode.match(/NAND/gi) || []).length;
 
                                 const entryMap = {};
                                 // Map configured form entries to values

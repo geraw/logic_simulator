@@ -1108,27 +1108,27 @@ json.dumps(result)
             // Load ladderboard if sheet URL provided
             if (PUBLISHED_SHEET_CSV) {
                 try {
-                    // Add an "Open CSV" button to footerControls that opens the published CSV in a new tab
+                    // Add an "Open Ladderboard" button to footerControls that opens the published CSV in a new tab
                     try {
                         const footerControls = document.getElementById('footerControls');
-                        if (footerControls && !document.getElementById('openCsvBtn')) {
-                            const openCsvBtn = document.createElement('button');
-                            openCsvBtn.id = 'openCsvBtn';
-                            openCsvBtn.textContent = 'Open Ladderboard';
-                            openCsvBtn.style.marginLeft = '8px';
-                            openCsvBtn.addEventListener('click', () => {
+                        if (footerControls && !document.getElementById('openLadderboard')) {
+                            const openLadderboard = document.createElement('button');
+                            openLadderboard.id = 'openLadderboard';
+                            openLadderboard.textContent = 'Open Ladderboard';
+                            openLadderboard.style.marginLeft = '8px';
+                            openLadderboard.addEventListener('click', () => {
                                 // Open our standalone ladderboard page in raw mode which displays CSV content (hides Circuit column)
                                 // Use buildUrl so the path works correctly when hosted under a repo subpath (e.g. GitHub Pages)
                                 const ladderUrl = buildUrl('webui/static/ladderboard.html') + '?csv=' + encodeURIComponent(PUBLISHED_SHEET_CSV) + '&mode=raw';
                                 window.open(ladderUrl, '_blank');
                             });
-                            footerControls.appendChild(openCsvBtn);
+                            footerControls.appendChild(openLadderboard);
                         }
                     } catch (e) {
-                        console.warn('Could not add Open CSV button', e);
+                        console.warn('Could not add Open Ladderboard button', e);
                     }
 
-                    await loadLeaderboardFromSheet(PUBLISHED_SHEET_CSV);
+                    //await loadLeaderboardFromSheet(PUBLISHED_SHEET_CSV);
                 } catch (err) {
                     console.warn('Could not load ladderboard:', err);
                 }
@@ -1146,177 +1146,7 @@ json.dumps(result)
 }
 
 // --- Google Sheets/Form helpers (outside DOMContentLoaded scope) ---
-async function loadLeaderboardFromSheet(csvUrl) {
-    const el = document.getElementById('ladderboard');
-    el.textContent = 'Loading...';
-    const r = await fetch(csvUrl);
-    if (!r.ok) throw new Error('Failed to fetch sheet');
-    const text = await r.text();
-    // Robust CSV parsing to support quoted multiline Circuit fields
-    function parseCsvRows(csvText) {
-        const rows = [];
-        let curField = '';
-        let inQuotes = false;
-        const row = [];
-        for (let i = 0; i < csvText.length; i++) {
-            const ch = csvText[i];
-            const next = csvText[i+1];
-            if (inQuotes) {
-                if (ch === '"') {
-                    if (next === '"') {
-                        curField += '"';
-                        i++; // skip escaped quote
-                    } else {
-                        inQuotes = false;
-                    }
-                } else {
-                    curField += ch;
-                }
-            } else {
-                if (ch === '"') {
-                    inQuotes = true;
-                } else if (ch === ',') {
-                    row.push(curField);
-                    curField = '';
-                } else if (ch === '\r') {
-                    // ignore
-                } else if (ch === '\n') {
-                    row.push(curField);
-                    curField = '';
-                    rows.push(row.slice());
-                    row.length = 0;
-                } else {
-                    curField += ch;
-                }
-            }
-        }
-        if (curField !== '' || row.length > 0) {
-            row.push(curField);
-            rows.push(row.slice());
-        }
-        return rows;
-    }
 
-    const rows = parseCsvRows(text || '');
-    if (!rows || rows.length === 0) {
-        el.textContent = 'No data';
-        return;
-    }
-    const headers = rows[0].map(h => (h || '').trim());
-
-    // Build record objects
-    const records = [];
-    for (let r = 1; r < rows.length; r++) {
-        const rw = rows[r];
-        const obj = {};
-        for (let i = 0; i < headers.length; i++) {
-            obj[headers[i]] = rw[i] === undefined ? '' : rw[i];
-        }
-        records.push(obj);
-    }
-
-    // Normalize keys
-    const norm = k => (k||'').replace(/[^a-zA-Z0-9_]/g,'').toLowerCase();
-    const mapped = records.map(r=>{ const o={}; for(const k in r) o[norm(k)]=r[k]; return o; });
-
-    // Helper: medal SVG
-    const medalSvg = (type) => {
-        const colors = { gold: '#ffd700', silver: '#c0c0c0', bronze: '#cd7f32' };
-        const color = colors[type] || '#999';
-        return '<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="'+color+'" stroke="#333" stroke-width="0.5"/><rect x="10" y="12" width="4" height="8" fill="'+color+'"/></svg>';
-    };
-
-    // Group by challenge and sort per-challenge lexicographically (D, NAND, Timestamp ISO)
-    const groups = {};
-    mapped.forEach(rw=>{
-        const ch = rw['challenge'] || rw['challengename'] || 'unknown';
-        if (!groups[ch]) groups[ch]=[];
-        const dStr = (rw['dgates'] || rw['d'] || '');
-        const nStr = (rw['nandgates'] || rw['nand'] || '');
-        const d = String(dStr).replace(/[^0-9]/g,'') || '';
-        const nand = String(nStr).replace(/[^0-9]/g,'') || '';
-        const tsObj = new Date(rw['timestamp']||rw['time']||rw['date']||'');
-        const tsIso = (!isNaN(tsObj.getTime())) ? tsObj.toISOString() : '';
-    groups[ch].push({ submitter: rw['submitter']||rw['name']||'', d: d, nand: nand, ts: tsObj, tsIso: tsIso });
-    });
-
-    // Create array of group entries with sorted members and bestKey
-    const groupEntries = Object.keys(groups).map(ch => {
-        const arr = groups[ch];
-        arr.sort((a,b)=>{ const da=String(a.d||''), db=String(b.d||''); if (da<db) return -1; if (da>db) return 1; const na=String(a.nand||''), nb=String(b.nand||''); if (na<nb) return -1; if (na>nb) return 1; const ta=String(a.tsIso||''), tb=String(b.tsIso||''); if (ta<tb) return -1; if (ta>tb) return 1; return 0; });
-        const best = arr.length?arr[0]:null;
-        const bestKey = best? [String(best.d||''), String(best.nand||''), String(best.tsIso||'')]: [''];
-        return { ch, arr, bestKey };
-    });
-
-    // Sort challenge sections by bestKey lexicographically
-    groupEntries.sort((A,B)=>{
-        const ka = A.bestKey, kb = B.bestKey;
-        for (let i=0;i<Math.max(ka.length,kb.length);i++){
-            const aVal = String(ka[i]||''), bVal = String(kb[i]||'');
-            if (aVal < bVal) return -1; if (aVal > bVal) return 1;
-        }
-        return A.ch.localeCompare(B.ch);
-    });
-
-    // Render groups as separate lists inside the ladderboard element. Prefer canonical challenge order.
-    async function fetchChallengesList() {
-        const candidates = ['../../challenges/challenges.json','../challenges/challenges.json','challenges/challenges.json'];
-        for (const p of candidates) {
-            try {
-                const r = await fetch(p);
-                if (!r.ok) continue;
-                const arr = await r.json();
-                if (Array.isArray(arr) && arr.length) return arr;
-            } catch (e) {
-                // ignore and try next
-            }
-        }
-        return null;
-    }
-
-    const canonicalChallenges = await fetchChallengesList();
-    el.innerHTML = '';
-    if (canonicalChallenges && canonicalChallenges.length) {
-        canonicalChallenges.forEach(chName => {
-            const found = groupEntries.find(g => g.ch === chName);
-            const arr = found ? found.arr : [];
-            const section = document.createElement('div');
-            section.className = 'ladder-challenge-section';
-            const h3 = document.createElement('h4'); h3.textContent = chName; section.appendChild(h3);
-            if (arr.length === 0) {
-                const empty = document.createElement('div'); empty.textContent = 'No submissions yet.'; empty.style.color='#666'; section.appendChild(empty);
-            } else {
-                const ol = document.createElement('ol'); ol.className='ladder-list';
-                arr.forEach((row, idx)=>{
-                    const li = document.createElement('li'); li.className = 'ladder-row';
-                    const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
-                    const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-                    const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
-                    li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
-                });
-                section.appendChild(ol);
-            }
-            el.appendChild(section);
-        });
-    } else {
-        groupEntries.forEach(({ch, arr})=>{
-            const section = document.createElement('div');
-            section.className = 'ladder-challenge-section';
-            const h3 = document.createElement('h4'); h3.textContent = ch; section.appendChild(h3);
-            const ol = document.createElement('ol'); ol.className = 'ladder-list';
-            arr.forEach((row, idx)=>{
-                const li = document.createElement('li'); li.className = 'ladder-row';
-                const medal = idx===0?medalSvg('gold'):(idx===1?medalSvg('silver'):(idx===2?medalSvg('bronze'):''));
-                const medalSpan = document.createElement('span'); medalSpan.className='medal'; medalSpan.innerHTML = medal;
-                const info = document.createElement('span'); info.className='ladder-info'; info.innerHTML = '<strong>'+escapeHtml(row.submitter||'(anonymous)')+'</strong> — D: '+escapeHtml(row.d||'')+', NAND: '+escapeHtml(row.nand||'')+' — '+escapeHtml(row.tsIso||'');
-                li.appendChild(medalSpan); li.appendChild(info); ol.appendChild(li);
-            });
-            section.appendChild(ol);
-            el.appendChild(section);
-        });
-    }
-}
 
 async function submitToGoogleForm(formActionUrl, entryMap) {
     // entryMap: { 'entry.123': 'Challenge name', ... }

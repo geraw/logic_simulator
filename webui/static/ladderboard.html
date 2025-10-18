@@ -37,7 +37,13 @@
 <body>
   <h1>CSCML25 Circuit Challenges Ladderboard</h1>
   <div id="status">Loading...</div>
-  <div id="content"></div>
+  <div style="display:flex;gap:12px;align-items:center">
+    <label for="challenge-select">Show:</label>
+    <select id="challenge-select" style="min-width:240px"></select>
+    <button id="prev-btn" title="Previous">◀</button>
+    <button id="next-btn" title="Next">▶</button>
+  </div>
+  <div id="content" style="margin-top:8px"></div>
 
   <script>
     function escapeHtml(value) {
@@ -211,12 +217,14 @@
             }
           }
 
-          // Render a table for each challenge in order
+          // Render a table for each challenge in order but only show one at a time.
           content.innerHTML = '';
+          const sections = {};
           order.forEach(chName => {
             const rows = groups[chName] || [];
             const section = document.createElement('div');
             section.className = 'ladder-challenge-section';
+            section.dataset.challenge = chName;
             const h = document.createElement('h3'); h.textContent = chName; section.appendChild(h);
             // resize toggle
             const resizeToggle1 = document.createElement('button'); resizeToggle1.className = 'resize-toggle'; resizeToggle1.textContent = '⤢'; resizeToggle1.title = 'Toggle expand';
@@ -279,10 +287,34 @@
                 handle.addEventListener('mousedown', onDown); handle.addEventListener('touchstart', onDown, {passive:false});
               })();
             }
-            content.appendChild(section);
+            // stash but do not append yet
+            sections[chName] = section;
           });
-          // ensure content fills viewport
-          adjustContentHeight();
+          // populate selector and show first item
+          const select = document.getElementById('challenge-select');
+          Object.keys(sections).forEach(k => { const opt = document.createElement('option'); opt.value = k; opt.textContent = k; select.appendChild(opt); });
+          let visibleKey = Object.keys(sections)[0];
+          function showSection(key) {
+            content.innerHTML = '';
+            if (!sections[key]) return;
+            content.appendChild(sections[key]);
+            adjustContentHeight();
+            document.getElementById('status').textContent = '';
+          }
+          select.addEventListener('change', (e)=>{ visibleKey = e.target.value; showSection(visibleKey); });
+          document.getElementById('prev-btn').addEventListener('click', ()=>{
+            const opts = Array.from(select.options).map(o=>o.value);
+            const idx = Math.max(0, opts.indexOf(visibleKey));
+            const ni = (idx - 1 + opts.length) % opts.length;
+            select.value = opts[ni]; select.dispatchEvent(new Event('change'));
+          });
+          document.getElementById('next-btn').addEventListener('click', ()=>{
+            const opts = Array.from(select.options).map(o=>o.value);
+            const idx = Math.max(0, opts.indexOf(visibleKey));
+            const ni = (idx + 1) % opts.length;
+            select.value = opts[ni]; select.dispatchEvent(new Event('change'));
+          });
+          showSection(visibleKey);
           window.addEventListener('resize', adjustContentHeight);
           return;
         }

@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Maze Competition</title>
+  <style>
+    body{font-family:system-ui,Arial, sans-serif;padding:12px}
+    #controls{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+    #grid{display:grid;grid-gap:2px;background:#333;padding:6px}
+    .cell{width:36px;height:36px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
+    .wall{background:#222}
+    .goal{background:lightgreen}
+  .robotA{background:#ffebcd;position:relative}
+  .robotB{background:#e0f7ff;position:relative}
+  .robotA .badge{color:#a00;font-weight:bold}
+  .robotB .badge{color:#007}
+  .dir-arrow{position:absolute;right:2px;bottom:2px;font-size:12px;opacity:0.9}
+    textarea{width:100%;height:120px;font-family:monospace}
+    .col{display:flex;flex-direction:column;gap:8px}
+    .row{display:flex;gap:12px}
+    button{padding:6px 10px}
+    #log{height:120px;overflow:auto;background:#f6f6f6;padding:8px;border-radius:4px}
+  </style>
+</head>
+<body>
+  <h1>Maze competition</h1>
+  <div id="controls">
+    <label>Maze size: <input id="width" type="number" value="10" min="5" style="width:64px"> x <input id="height" type="number" value="8" min="5" style="width:64px"></label>
+    <button id="new-maze">New maze</button>
+    <button id="reset">Reset</button>
+    <button id="step">Step</button>
+    <button id="run">Run</button>
+    <button id="stop">Stop</button>
+    <label>Speed(ms): <input id="speed" type="number" value="300" min="10" style="width:80px"></label>
+  </div>
+
+  <div class="row">
+    <div class="col" style="flex:1">
+      <div id="grid"></div>
+      <div style="margin-top:6px;font-size:13px">
+        Legend: <span style="display:inline-block;padding:2px 6px;background:#ffebcd;margin-right:6px">A</span> robot A &nbsp; <span style="display:inline-block;padding:2px 6px;background:#e0f7ff;margin-right:6px">B</span> robot B. Arrows show facing direction.
+      </div>
+      <div style="margin-top:8px">Click cells to toggle wall/empty. Shift+click sets goal. Ctrl+click places robot A start. Alt+click places robot B start.</div>
+    </div>
+    <div style="width:420px">
+      <h3>Robot A controller (left)</h3>
+      <textarea id="codeA">// Inputs available on object `inputs`: { ahead: true/false }
+// Set outputs on object `outputs`: { turn: true/false, forward: true/false }
+// Example: simple forward-only
+if (!inputs.ahead) { outputs.forward = true; outputs.turn = false; } else { outputs.turn = true; outputs.forward = false; }
+</textarea>
+      <h3>Robot B controller (right)</h3>
+      <textarea id="codeB">// Mirror of A
+if (!inputs.ahead) { outputs.forward = true; outputs.turn = false; } else { outputs.turn = true; outputs.forward = false; }</textarea>
+      <div style="margin-top:8px;display:flex;gap:8px"><button id="apply">Apply code</button><button id="randomize">Randomize maze</button></div>
+      <h4>Log</h4>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    // Simple grid maze with two robots. Robots face one of 0:up,1:right,2:down,3:left
+    function $(id){return document.getElementById(id)}
+    const gridEl = $('grid');
+    const logEl = $('log');
+    let W = parseInt($('width').value,10), H = parseInt($('height').value,10);
+    let cells = []; // 0 empty, 1 wall
+    let goal = {x: W-1, y: H-1};
+    let robotA = {x:0,y:0,dir:1};
+    let robotB = {x:0,y:1,dir:1};
+    let interval = null;
+    let speed = parseInt($('speed').value,10) || 300;
+
+    function log(msg){ const p = document.createElement('div'); p.textContent = msg; logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight; }
+
+    function makeEmpty(w,h){ cells = new Array(w*h).fill(0); W=w; H=h; goal={x:w-1,y:h-1}; robotA={x:0,y:0,dir:1}; robotB={x:0,y:1,dir:1}; }
+
+    function idx(x,y){ return y*W + x; }
+
+    function render(){ gridEl.style.gridTemplateColumns = `repeat(${W},36px)`; gridEl.innerHTML = ''; for (let y=0;y<H;y++){ for (let x=0;x<W;x++){ const div = document.createElement('div'); div.className='cell'+(cells[idx(x,y)]? ' wall':''); if (x===goal.x && y===goal.y) div.classList.add('goal');
+      // render robots and arrows
+      if (robotA.x===x && robotA.y===y){ div.classList.add('robotA'); div.innerHTML = '<span class="badge">A</span>'; const aArrow = document.createElement('div'); aArrow.className='dir-arrow'; aArrow.textContent = dirChar(robotA.dir); div.appendChild(aArrow); }
+      if (robotB.x===x && robotB.y===y){ div.classList.add('robotB'); div.innerHTML = (div.innerHTML? div.innerHTML+' ':'') + '<span class="badge">B</span>'; const bArrow = document.createElement('div'); bArrow.className='dir-arrow'; bArrow.textContent = dirChar(robotB.dir); div.appendChild(bArrow); }
+            
+      div.addEventListener('click', (ev)=>{
+              const shifted = ev.shiftKey; const ctrl = ev.ctrlKey || ev.metaKey; const alt = ev.altKey;
+              if (shifted){ goal.x = x; goal.y = y; render(); return; }
+              if (ctrl){ robotA.x=x; robotA.y=y; render(); return; }
+              if (alt){ robotB.x=x; robotB.y=y; render(); return; }
+              cells[idx(x,y)] = cells[idx(x,y)]?0:1; render();
+            });
+            gridEl.appendChild(div);
+    } }
+    }
+
+    function inBounds(x,y){ return x>=0 && y>=0 && x<W && y<H; }
+    function cellFree(x,y){ return inBounds(x,y) && !cells[idx(x,y)]; }
+
+    function dirChar(d){ // 0:up,1:right,2:down,3:left
+      return d===0? '↑': (d===1? '→': (d===2? '↓':'←'));
+    }
+
+    // sensor: ahead - whether cell in front is a wall (true means blocked)
+    function sense(robot){ const d=robot.dir; let nx=robot.x, ny=robot.y; if (d===0) ny--; else if (d===1) nx++; else if (d===2) ny++; else nx--; return { ahead: !cellFree(nx,ny) || !inBounds(nx,ny) } }
+
+    // actuators: outputs.turn => perform 90deg clockwise turn; outputs.forward => move forward if free
+    function applyOutputs(robot, outputs){ if (outputs.turn){ robot.dir = (robot.dir+1)%4; }
+      if (outputs.forward){ let nx=robot.x, ny=robot.y; if (robot.dir===0) ny--; else if (robot.dir===1) nx++; else if (robot.dir===2) ny++; else nx--; if (cellFree(nx,ny)) { robot.x=nx; robot.y=ny; } }
+    }
+
+    // default no-op controllers
+    let controllerA = function(inputs,outputs){};
+    let controllerB = function(inputs,outputs){};
+
+    function compileController(code){ try{ return new Function('inputs','outputs', code); } catch(e){ log('Compile error: '+e.message); return function(){}} }
+
+    function stepOnce(){ // sense -> run controllers -> apply outputs -> check goals
+      try{
+        const inA = sense(robotA); const inB = sense(robotB);
+        const outA = {turn:false, forward:false}; const outB = {turn:false, forward:false};
+        controllerA(inA, outA); controllerB(inB, outB);
+        applyOutputs(robotA, outA); applyOutputs(robotB, outB);
+        render();
+        if (robotA.x===goal.x && robotA.y===goal.y){ log('Robot A reached goal!'); stop(); }
+        if (robotB.x===goal.x && robotB.y===goal.y){ log('Robot B reached goal!'); stop(); }
+      } catch(e){ log('Runtime error: '+e.message); stop(); }
+    }
+
+    function run(){ if (interval) return; speed = parseInt($('speed').value,10) || 300; interval = setInterval(stepOnce, speed); }
+    function stop(){ if (interval){ clearInterval(interval); interval=null; } }
+    function reset(){ stop(); makeEmpty(W,H); render(); }
+
+    $('new-maze').addEventListener('click', ()=>{ W=parseInt($('width').value,10)||10; H=parseInt($('height').value,10)||8; makeEmpty(W,H); randomizeMaze(); render(); });
+    $('reset').addEventListener('click', ()=>{ reset(); });
+    $('step').addEventListener('click', ()=>{ stepOnce(); });
+    $('run').addEventListener('click', ()=>{ run(); });
+    $('stop').addEventListener('click', ()=>{ stop(); });
+    $('apply').addEventListener('click', ()=>{ controllerA = compileController($('codeA').value); controllerB = compileController($('codeB').value); log('Controllers applied'); });
+    $('randomize').addEventListener('click', ()=>{ randomizeMaze(); render(); });
+
+    function randomizeMaze(){ // simple randomized walls with connectivity not guaranteed
+      for (let i=0;i<W*H;i++) cells[i] = (Math.random() < 0.25) ? 1 : 0; // 25% walls
+      // ensure start and goal clear
+      cells[idx(robotA.x,robotA.y)] = 0; cells[idx(robotB.x,robotB.y)] = 0; cells[idx(goal.x,goal.y)] = 0;
+    }
+
+    // initial setup
+    makeEmpty(W,H); randomizeMaze(); render(); controllerA = compileController($('codeA').value); controllerB = compileController($('codeB').value);
+  </script>
+</body>
+</html>
